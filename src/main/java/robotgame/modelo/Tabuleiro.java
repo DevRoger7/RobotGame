@@ -55,7 +55,7 @@ public class Tabuleiro {
         return obstaculos[x][y];
     }
 
-    void removerObstaculo(int x, int y) {
+    public void removerObstaculo(int x, int y) {
         obstaculos[x][y] = null;
     }
 }

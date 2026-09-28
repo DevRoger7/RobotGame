@@ -6,6 +6,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
 public class RobotGameApp extends Application {
@@ -16,8 +17,8 @@ public class RobotGameApp extends Application {
         Parent raiz = loader.load();
         MainController controller = loader.getController();
 
-        Scene cena = new Scene(raiz, 520, 640);
-        cena.setOnKeyPressed(controller::aoTeclaPressionada);
+        Scene cena = new Scene(raiz, 660, 700);
+        cena.addEventFilter(KeyEvent.KEY_PRESSED, controller::aoTeclaPressionada);
 
         palco.setTitle("RobotGame");
         palco.setScene(cena);
