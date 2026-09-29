@@ -184,7 +184,8 @@ public class ResultScreen implements Tela {
         VBox banda = new VBox(20, linhaTitulo, Ui.label(faixa, "fim-sub"));
         banda.getStyleClass().add("fim-faixa");
         banda.setAlignment(Pos.CENTER);
-        banda.setPadding(new Insets(34, 0, 30, 0));
+        // O eixo Y ocupa a esquerda da moldura: desloca o conteúdo para centralizar sobre as casas.
+        banda.setPadding(new Insets(34, 0, 30, BoardView.EIXO));
         banda.setMaxHeight(Region.USE_PREF_SIZE);
         banda.setTranslateY(-60);
 

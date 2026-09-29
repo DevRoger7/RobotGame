@@ -31,7 +31,8 @@ final class LayoutJogo {
     static VBox montar(ModoJogo modo, StepperBar.Passo passo, BoardView tabuleiro, MessageBar mensagem,
                        Node painelDireito) {
         VBox esquerda = new VBox(14, tabuleiro, mensagem);
-        esquerda.setAlignment(Pos.TOP_CENTER);
+        // Borda esquerda do tabuleiro alinhada com a do cabeçalho.
+        esquerda.setAlignment(Pos.TOP_LEFT);
         Ui.tamanhoFixo(esquerda, 660, ALTURA_AREA);
 
         VBox direita = painelDireito instanceof VBox v ? v : new VBox(painelDireito);

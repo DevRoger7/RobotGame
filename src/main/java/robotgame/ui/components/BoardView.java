@@ -46,7 +46,7 @@ public class BoardView extends StackPane {
 
     private static final int N = Tabuleiro.TAMANHO;
     private static final Duration DURACAO_MORTE = Duration.millis(2000);
-    private static final double EIXO = 20;
+    public static final double EIXO = 20;
 
     private final double celula;
     private final CellView[][] casas = new CellView[N][N];
