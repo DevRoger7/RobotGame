@@ -184,7 +184,8 @@ public class CenarioScreen implements Tela {
     private Image previa(int x, int y) {
         boolean livre = tabuleiro.getObstaculo(x, y) == null
                 && !(x == 0 && y == 0)
-                && !(x == tabuleiro.getXAlimento() && y == tabuleiro.getYAlimento());
+                && !(x == tabuleiro.getXAlimento() && y == tabuleiro.getYAlimento())
+                && !(ferramenta == TipoObstaculo.ROCHA && tabuleiro.fechariaCaminhoAoAlimento(x, y));
         if (!livre) {
             return null;
         }

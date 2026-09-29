@@ -16,6 +16,11 @@ public abstract class Obstaculo {
 
     public abstract void bater(Robo robo, Tabuleiro tabuleiro);
 
+    /** Se o obstáculo fica no tabuleiro depois de bater (o robô só volta), ele pode fechar caminhos. */
+    public boolean bloqueiaPassagem() {
+        return false;
+    }
+
     public abstract String getNome();
 
     public abstract char getSimbolo();

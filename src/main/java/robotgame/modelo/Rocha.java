@@ -8,6 +8,11 @@ public class Rocha extends Obstaculo {
     }
 
     @Override
+    public boolean bloqueiaPassagem() {
+        return true;
+    }
+
+    @Override
     public String getNome() {
         return "Rocha";
     }

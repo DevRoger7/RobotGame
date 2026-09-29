@@ -1,5 +1,8 @@
 package robotgame.modelo;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public class Tabuleiro {
 
     public static final int TAMANHO = 4;
@@ -48,7 +51,44 @@ public class Tabuleiro {
         if (obstaculos[x][y] != null) {
             throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada por outro obstáculo.");
         }
+        if (o.bloqueiaPassagem() && fechariaCaminhoAoAlimento(x, y)) {
+            throw new IllegalArgumentException("Uma rocha em (" + x + "," + y + ") fecharia o caminho até o alimento: "
+                    + "os robôs ficariam presos e a partida nunca terminaria.");
+        }
         obstaculos[x][y] = o;
+    }
+
+    /**
+     * Indica se uma rocha (ou qualquer obstáculo que bloqueie a passagem) em (x, y) impediria os robôs de
+     * ir de (0,0) até o alimento. Só obstáculos que bloqueiam contam: o fantasma elimina o robô e some,
+     * então nunca prende ninguém para sempre.
+     */
+    public boolean fechariaCaminhoAoAlimento(int x, int y) {
+        boolean[][] visitada = new boolean[TAMANHO][TAMANHO];
+        Deque<int[]> fila = new ArrayDeque<>();
+        visitada[0][0] = true;
+        fila.add(new int[]{0, 0});
+        int[][] passos = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+        while (!fila.isEmpty()) {
+            int[] atual = fila.poll();
+            if (atual[0] == xAlimento && atual[1] == yAlimento) {
+                return false;
+            }
+            for (int[] passo : passos) {
+                int nx = atual[0] + passo[0];
+                int ny = atual[1] + passo[1];
+                if (!dentroDosLimites(nx, ny) || visitada[nx][ny] || (nx == x && ny == y)) {
+                    continue;
+                }
+                if (obstaculos[nx][ny] != null && obstaculos[nx][ny].bloqueiaPassagem()) {
+                    continue;
+                }
+                visitada[nx][ny] = true;
+                fila.add(new int[]{nx, ny});
+            }
+        }
+        return true;
     }
 
     public Obstaculo getObstaculo(int x, int y) {
