@@ -1,6 +1,7 @@
 package robotgame.modelo;
 
 import java.util.Random;
+import java.util.function.Consumer;
 
 import robotgame.excecao.MovimentoInvalidoException;
 
@@ -16,6 +17,8 @@ public class Simulacao {
     private final Tabuleiro tabuleiro;
     private final Robo[] robos;
     private final Random random = new Random();
+    private Consumer<EventoPartida> ouvinte = evento -> {
+    };
 
     private int vez;
     private int rodadas;
@@ -28,6 +31,10 @@ public class Simulacao {
         this.modo = modo;
         this.tabuleiro = tabuleiro;
         this.robos = robos;
+    }
+
+    public void setOuvinte(Consumer<EventoPartida> ouvinte) {
+        this.ouvinte = ouvinte;
     }
 
     public boolean isTerminada() {
@@ -55,11 +62,22 @@ public class Simulacao {
             direcao = direcaoDoDeslocamento(xAntes, yAntes, robo.getX(), robo.getY());
             mensagem.append(": agora em ").append(posicao(robo));
 
-            Obstaculo obstaculo = tabuleiro.getObstaculo(robo.getX(), robo.getY());
+            int xObstaculo = robo.getX();
+            int yObstaculo = robo.getY();
+            Obstaculo obstaculo = tabuleiro.getObstaculo(xObstaculo, yObstaculo);
             if (obstaculo != null) {
                 mensagem.append(". Bateu em ").append(obstaculo.getNome()).append(" #").append(obstaculo.getId());
                 obstaculo.bater(robo, tabuleiro);
                 mensagem.append(robo.isAtivo() ? " e voltou para " + posicao(robo) : " e foi eliminado!");
+                publicar(robo.isAtivo() ? EventoPartida.Tipo.ROCHA : EventoPartida.Tipo.EXPLODIU, robo, direcao, obstaculo);
+                if (tabuleiro.getObstaculo(xObstaculo, yObstaculo) == null) {
+                    ouvinte.accept(new EventoPartida(EventoPartida.Tipo.FANTASMA_SUMIU, robo, direcao,
+                            xObstaculo, yObstaculo, obstaculo));
+                }
+            } else if (tabuleiro.alimentoEncontradoPor(robo)) {
+                publicar(EventoPartida.Tipo.ACHOU_ALIMENTO, robo, direcao, null);
+            } else {
+                publicar(EventoPartida.Tipo.MOVEU, robo, direcao, null);
             }
         } catch (MovimentoInvalidoException e) {
             mensagem.append(": ").append(e.getMessage());
@@ -120,6 +138,10 @@ public class Simulacao {
             }
         }
         return false;
+    }
+
+    private void publicar(EventoPartida.Tipo tipo, Robo robo, String direcao, Obstaculo obstaculo) {
+        ouvinte.accept(new EventoPartida(tipo, robo, direcao, robo.getX(), robo.getY(), obstaculo));
     }
 
     private static String direcaoDoDeslocamento(int xAntes, int yAntes, int x, int y) {

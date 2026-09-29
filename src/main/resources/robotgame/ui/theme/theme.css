@@ -1,0 +1,425 @@
+/* Tema "Labirinto Neon". JavaFX CSS: espaçamentos ficam em spacing/padding dos containers. */
+
+.root {
+    -fx-background-color: #050514;
+    -fx-font-family: "Chakra Petch Medium";
+    -fx-font-size: 14px;
+    -fx-text-fill: #f4f4ff;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.label {
+    -fx-text-fill: #f4f4ff;
+}
+
+/* ---------- tipografia ---------- */
+
+.pixel { -fx-font-family: "Press Start 2P"; }
+.semi { -fx-font-family: "Chakra Petch SemiBold"; }
+.bold { -fx-font-family: "Chakra Petch"; -fx-font-weight: bold; }
+.muted { -fx-text-fill: #9da0d8; }
+.amarelo { -fx-text-fill: #ffe14d; }
+.ciano { -fx-text-fill: #3df0ff; }
+.verde { -fx-text-fill: #4cff8a; }
+.vermelho { -fx-text-fill: #ff4d5e; }
+
+/* ---------- cartões ---------- */
+
+.neon-card {
+    -fx-background-color: #0c0c2c;
+    -fx-background-radius: 14;
+    -fx-border-color: #2a2aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(58,58,255,0.35), 14, 0.2, 0, 0);
+}
+
+.card-title {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 10.5px;
+    -fx-text-fill: #ffe14d;
+}
+
+.inner-card {
+    -fx-background-color: #0c0c2c;
+    -fx-background-radius: 12;
+    -fx-border-color: #2a2aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+}
+
+.inner-card:hover {
+    -fx-border-color: #4a4aff;
+}
+
+.selected-glow, .selected-glow:hover {
+    -fx-border-color: #ffe14d;
+    -fx-border-width: 3;
+    -fx-background-color: rgba(255,225,77,0.12);
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.45), 18, 0.2, 0, 0);
+}
+
+/* moldura dupla do tabuleiro: duas bordas de 2px com 2px de intervalo */
+.board-frame {
+    -fx-background-color: #070720;
+    -fx-background-radius: 22;
+    -fx-border-color: #4a4aff, #4a4aff;
+    -fx-border-width: 2, 2;
+    -fx-border-insets: 0, 4;
+    -fx-border-radius: 22, 18;
+    -fx-effect: dropshadow(gaussian, rgba(58,58,255,0.5), 26, 0.2, 0, 0);
+}
+
+.board-frame.compacto {
+    -fx-background-radius: 16;
+    -fx-border-radius: 16, 12;
+    -fx-effect: dropshadow(gaussian, rgba(58,58,255,0.4), 16, 0.2, 0, 0);
+}
+
+.axis-label {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 11px;
+    -fx-text-fill: #9da0d8;
+}
+
+.cell-coord {
+    -fx-font-family: "Chakra Petch SemiBold";
+    -fx-font-size: 11px;
+    -fx-text-fill: #8488cc;
+}
+
+/* ---------- botões ---------- */
+
+.button {
+    -fx-background-insets: 0;
+    -fx-padding: 0 16 0 16;
+    -fx-graphic-text-gap: 10;
+}
+
+.btn-primary {
+    -fx-background-radius: 12;
+    -fx-text-fill: #050514;
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 10px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.45), 0, 0, 0, 5);
+}
+
+.btn-primary:pressed {
+    -fx-translate-y: 4;
+    -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.45), 0, 0, 0, 1);
+}
+
+.btn-verde {
+    -fx-background-color: #4cff8a;
+    -fx-effect: dropshadow(one-pass-box, #229a52, 0, 0, 0, 5);
+}
+
+.btn-verde:hover { -fx-background-color: #6dffa1; }
+.btn-verde:pressed { -fx-effect: dropshadow(one-pass-box, #229a52, 0, 0, 0, 1); }
+
+.btn-laranja {
+    -fx-background-color: #ffa63d;
+    -fx-effect: dropshadow(one-pass-box, #a8621a, 0, 0, 0, 5);
+}
+
+.btn-laranja:hover { -fx-background-color: #ffb95f; }
+.btn-laranja:pressed { -fx-effect: dropshadow(one-pass-box, #a8621a, 0, 0, 0, 1); }
+
+.btn-primary:disabled { -fx-opacity: 0.45; }
+
+.btn-secondary {
+    -fx-background-color: #10103a;
+    -fx-background-radius: 12;
+    -fx-border-color: #4a4aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 12;
+    -fx-text-fill: #f4f4ff;
+    -fx-font-family: "Chakra Petch";
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+    -fx-cursor: hand;
+}
+
+.btn-secondary:hover {
+    -fx-background-color: #16164a;
+    -fx-border-color: #6a6aff;
+    -fx-effect: dropshadow(gaussian, rgba(74,74,255,0.45), 12, 0.2, 0, 0);
+}
+
+.btn-secondary:pressed { -fx-background-color: #0a0a2a; }
+.btn-secondary:disabled { -fx-opacity: 0.45; }
+
+.btn-secondary.destaque {
+    -fx-border-color: #ffe14d;
+    -fx-border-width: 3;
+    -fx-background-color: rgba(255,225,77,0.12);
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.45), 14, 0.2, 0, 0);
+}
+
+.keycap {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 8px;
+    -fx-padding: 4 5 3 5;
+    -fx-background-color: rgba(0,0,0,0.12);
+    -fx-background-radius: 5;
+    -fx-border-color: #050514;
+    -fx-border-width: 2;
+    -fx-border-radius: 5;
+    -fx-text-fill: #050514;
+}
+
+.keycap.claro {
+    -fx-background-color: #1c1c5a;
+    -fx-border-color: #9da0d8;
+    -fx-text-fill: #f4f4ff;
+}
+
+/* ---------- blocos internos ---------- */
+
+.tile {
+    -fx-background-color: #10103a;
+    -fx-background-radius: 10;
+}
+
+.stat-label {
+    -fx-font-family: "Chakra Petch SemiBold";
+    -fx-font-size: 11px;
+    -fx-text-fill: #9da0d8;
+}
+
+.stat-value {
+    -fx-font-family: "Press Start 2P";
+    -fx-text-fill: #f4f4ff;
+}
+
+.chip {
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-border-width: 2;
+    -fx-padding: 3 10 3 8;
+}
+
+.chip-text {
+    -fx-font-family: "Chakra Petch";
+    -fx-font-weight: bold;
+    -fx-font-size: 11.5px;
+}
+
+.tag {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 9px;
+    -fx-text-fill: #050514;
+    -fx-background-color: #ffe14d;
+    -fx-background-radius: 7;
+    -fx-padding: 6 8 5 8;
+}
+
+.mode-tag {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 10px;
+    -fx-text-fill: #050514;
+    -fx-background-color: #ffe14d;
+    -fx-background-radius: 10;
+    -fx-padding: 11 14 10 14;
+}
+
+/* ---------- stepper ---------- */
+
+.step-pill {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 9px;
+    -fx-text-fill: #9da0d8;
+    -fx-background-color: #0c0c2c;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-width: 2;
+    -fx-border-color: #4a4aff;
+    -fx-padding: 9 12 8 12;
+    -fx-graphic-text-gap: 7;
+}
+
+.step-pill.feito { -fx-text-fill: #d0d2f4; }
+
+.step-pill.atual {
+    -fx-text-fill: #ffe14d;
+    -fx-border-color: #ffe14d;
+    -fx-background-color: rgba(255,225,77,0.10);
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.45), 14, 0.2, 0, 0);
+}
+
+.step-pill.futuro {
+    -fx-border-style: segments(5, 4);
+}
+
+/* ---------- menu ---------- */
+
+.mode-number {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 16px;
+    -fx-text-fill: #d0d2f4;
+    -fx-background-color: #10103a;
+    -fx-background-radius: 8;
+    -fx-alignment: center;
+}
+
+.mode-number.ativo {
+    -fx-text-fill: #050514;
+    -fx-background-color: #ffe14d;
+}
+
+.mode-title {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 11.5px;
+    -fx-text-fill: #f4f4ff;
+}
+
+.mode-title.ativo { -fx-text-fill: #ffe14d; }
+
+.mode-desc {
+    -fx-font-size: 14.5px;
+    -fx-text-fill: #d8daf6;
+}
+
+.pill-tag {
+    -fx-font-family: "Chakra Petch";
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-text-fill: #d8daf6;
+    -fx-border-color: #4a4aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 4 10 4 10;
+}
+
+.pill-tag.ativo {
+    -fx-border-color: #ffe14d;
+    -fx-text-fill: #ffe14d;
+}
+
+.section-label {
+    -fx-font-family: "Chakra Petch SemiBold";
+    -fx-font-size: 12.5px;
+    -fx-text-fill: #9da0d8;
+}
+
+.swatch {
+    -fx-background-color: #10103a;
+    -fx-background-radius: 50%;
+    -fx-border-color: #2a2aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 50%;
+    -fx-cursor: hand;
+}
+
+.swatch:hover { -fx-border-color: #6a6aff; }
+
+.swatch.selecionado {
+    -fx-border-color: #ffe14d;
+    -fx-border-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.55), 12, 0.25, 0, 0);
+}
+
+.swatch.outro {
+    -fx-border-color: #9da0d8;
+    -fx-border-style: segments(4, 3);
+}
+
+.aba {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 8px;
+    -fx-text-fill: #9da0d8;
+    -fx-background-color: #10103a;
+    -fx-background-radius: 7;
+    -fx-border-color: #2a2aff;
+    -fx-border-width: 2;
+    -fx-border-radius: 7;
+    -fx-padding: 6 8 5 8;
+    -fx-cursor: hand;
+}
+
+.aba.ativa {
+    -fx-text-fill: #050514;
+    -fx-background-color: #ffe14d;
+    -fx-border-color: #ffe14d;
+}
+
+.erro {
+    -fx-font-family: "Chakra Petch SemiBold";
+    -fx-font-size: 13px;
+    -fx-text-fill: #ff4d5e;
+}
+
+/* ---------- diário e legenda ---------- */
+
+.diary-row {
+    -fx-background-radius: 8;
+    -fx-padding: 3 10 3 10;
+}
+
+.diary-row.novo { -fx-background-color: rgba(157,160,216,0.14); }
+
+.diary-num {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 9px;
+    -fx-text-fill: #9da0d8;
+}
+
+.diary-text { -fx-font-size: 13.5px; }
+
+.legend-title {
+    -fx-font-family: "Chakra Petch SemiBold";
+    -fx-font-size: 13.5px;
+}
+
+.legend-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: #9da0d8;
+}
+
+/* ---------- slider ---------- */
+
+.slider { -fx-padding: 2 0 2 0; }
+
+.slider .track {
+    -fx-background-color: #10103a;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
+    -fx-border-color: #2a2aff;
+    -fx-border-radius: 6;
+    -fx-pref-height: 10;
+    -fx-padding: 4;
+}
+
+.slider .thumb {
+    -fx-background-color: #ffe14d;
+    -fx-background-radius: 10;
+    -fx-background-insets: 0;
+    -fx-padding: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.6), 10, 0.3, 0, 0);
+}
+
+/* ---------- fim de jogo ---------- */
+
+.fim-titulo {
+    -fx-font-family: "Press Start 2P";
+    -fx-font-size: 24px;
+    -fx-text-fill: #ffe14d;
+    -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.55), 14, 0.2, 0, 0);
+}
+
+.fim-sub {
+    -fx-font-family: "Chakra Petch";
+    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+}
+
+.fim-faixa {
+    -fx-background-color: #0c0c2c;
+    -fx-border-color: #ffe14d;
+    -fx-border-width: 3 0 3 0;
+}

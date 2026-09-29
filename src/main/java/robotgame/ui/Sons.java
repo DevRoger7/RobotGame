@@ -10,7 +10,7 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
 
-final class Sons {
+public final class Sons {
 
     private final MediaPlayer inicio = criar("inicio.wav");
     private final MediaPlayer wakawaka = criar("wakawaka.wav");
@@ -22,7 +22,7 @@ final class Sons {
     private final Map<MediaPlayer, Runnable> aoTerminar = new HashMap<>();
     private boolean mudo;
 
-    Sons() {
+    public Sons() {
         for (MediaPlayer player : todos) {
             player.setOnEndOfMedia(() -> terminou(player));
             player.setOnError(() -> terminou(player));
@@ -35,53 +35,53 @@ final class Sons {
         });
     }
 
-    void tocarInicio(Runnable depois) {
+    public void tocarInicio(Runnable depois) {
         tocarDoComeco(inicio, depois);
     }
 
-    void pararInicio() {
+    public void pararInicio() {
         aoTerminar.remove(inicio);
         tocando.remove(inicio);
         inicio.stop();
     }
 
-    void tocarMorte(Runnable depois) {
+    public void tocarMorte(Runnable depois) {
         tocarDoComeco(morte, depois);
     }
 
-    void tocarFruta() {
+    public void tocarFruta() {
         tocarDoComeco(fruta, null);
     }
 
-    void iniciarWakawaka() {
+    public void iniciarWakawaka() {
         tocando.add(wakawaka);
         wakawaka.play();
     }
 
-    void pararWakawaka() {
+    public void pararWakawaka() {
         tocando.remove(wakawaka);
         wakawaka.stop();
     }
 
-    void pausarTudo() {
+    public void pausarTudo() {
         tocando.forEach(MediaPlayer::pause);
     }
 
-    void retomarTudo() {
+    public void retomarTudo() {
         tocando.forEach(MediaPlayer::play);
     }
 
-    void pararTudo() {
+    public void pararTudo() {
         aoTerminar.clear();
         tocando.clear();
         todos.forEach(MediaPlayer::stop);
     }
 
-    boolean isMudo() {
+    public boolean isMudo() {
         return mudo;
     }
 
-    void setMudo(boolean mudo) {
+    public void setMudo(boolean mudo) {
         this.mudo = mudo;
         todos.forEach(player -> player.setMute(mudo));
     }

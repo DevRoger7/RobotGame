@@ -7,23 +7,23 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 
-final class Imagens {
+public final class Imagens {
 
     private Imagens() {
     }
 
     private static final int ALFA_MINIMO_VISIVEL = 16;
 
-    static Image carregar(String arquivo) {
+    public static Image carregar(String arquivo) {
         return new Image(Imagens.class.getResourceAsStream("imagens/" + arquivo));
     }
 
-    static Image carregarRecortada(String arquivo) {
+    public static Image carregarRecortada(String arquivo) {
         return recortarMargens(carregar(arquivo));
     }
 
     // Apaga só o fundo claro ligado à borda, preservando áreas claras internas (olhos, brilho).
-    static Image carregarSemFundo(String arquivo) {
+    public static Image carregarSemFundo(String arquivo) {
         Image original = carregar(arquivo);
         int w = (int) original.getWidth();
         int h = (int) original.getHeight();

@@ -1,5 +1,7 @@
 package robotgame.modelo;
 
+import java.util.function.Consumer;
+
 import robotgame.excecao.MovimentoInvalidoException;
 
 public class Robo {
@@ -12,6 +14,7 @@ public class Robo {
     private boolean ativo;
     private int movimentosValidos;
     private int movimentosInvalidos;
+    private Consumer<EventoPartida> ouvinteMovimentoInvalido;
 
     public Robo(String cor) {
         this.cor = cor;
@@ -50,6 +53,10 @@ public class Robo {
         return movimentosValidos + movimentosInvalidos;
     }
 
+    public void setOuvinteMovimentoInvalido(Consumer<EventoPartida> ouvinte) {
+        this.ouvinteMovimentoInvalido = ouvinte;
+    }
+
     public void setX(int x) throws MovimentoInvalidoException {
         if (x < 0 || x > Tabuleiro.TAMANHO - 1) {
             throw new MovimentoInvalidoException("x=" + x);
@@ -68,6 +75,7 @@ public class Robo {
         if (!"up".equals(direcao) && !"down".equals(direcao)
                 && !"right".equals(direcao) && !"left".equals(direcao)) {
             movimentosInvalidos++;
+            avisarMovimentoInvalido(direcao);
             throw new MovimentoInvalidoException(direcao);
         }
 
@@ -83,6 +91,7 @@ public class Robo {
             }
         } catch (MovimentoInvalidoException e) {
             movimentosInvalidos++;
+            avisarMovimentoInvalido(direcao);
             throw new MovimentoInvalidoException(direcao);
         }
 
@@ -99,6 +108,7 @@ public class Robo {
             case 4 -> mover("left");
             default -> {
                 movimentosInvalidos++;
+                avisarMovimentoInvalido(String.valueOf(direcao));
                 throw new MovimentoInvalidoException(String.valueOf(direcao));
             }
         }
@@ -115,5 +125,12 @@ public class Robo {
 
     void explodir() {
         ativo = false;
+    }
+
+    private void avisarMovimentoInvalido(String direcao) {
+        if (ouvinteMovimentoInvalido != null) {
+            ouvinteMovimentoInvalido.accept(
+                    new EventoPartida(EventoPartida.Tipo.INVALIDO, this, direcao, x, y, null));
+        }
     }
 }
