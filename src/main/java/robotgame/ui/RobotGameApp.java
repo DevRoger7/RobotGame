@@ -1,27 +1,19 @@
 package robotgame.ui;
 
-import java.io.IOException;
-
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
+
+import robotgame.ui.partida.ConfiguracaoPartida;
+import robotgame.ui.screens.Navegador;
+import robotgame.ui.theme.Tema;
 
 public class RobotGameApp extends Application {
 
     @Override
-    public void start(Stage palco) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("main.fxml"));
-        Parent raiz = loader.load();
-        MainController controller = loader.getController();
-
-        Scene cena = new Scene(raiz, 660, 700);
-        cena.addEventFilter(KeyEvent.KEY_PRESSED, controller::aoTeclaPressionada);
-
-        palco.setTitle("RobotGame");
-        palco.setScene(cena);
+    public void start(Stage palco) {
+        Tema.carregarFontes();
+        Navegador navegador = new Navegador(palco);
+        navegador.irParaMenu(new ConfiguracaoPartida());
         palco.show();
     }
 
