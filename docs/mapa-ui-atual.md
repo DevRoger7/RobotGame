@@ -118,3 +118,16 @@ decisões tomadas durante a implementação (seção 9 do plano).
 12. **Fim por limite de 1000 rodadas** (modos 2 e 4): tratado como "NINGUÉM ACHOU A FRUTA".
 13. `MainController` e `main.fxml` foram substituídos pelas novas telas (a lógica de partida foi migrada
     sem mudanças de regra para `ui.screens.GameScreen`).
+14. **Fontes**: `Press Start 2P` e `Chakra Petch` (Medium, SemiBold, Bold) em `src/main/resources/fonts/`,
+    com as licenças OFL. Nomes reais das famílias no JavaFX: `Press Start 2P`, `Chakra Petch Medium`,
+    `Chakra Petch SemiBold` e `Chakra Petch` (Bold) — o CSS usa esses nomes.
+15. **Acentos na pixel-font**: a Press Start 2P desenha maiúsculas acentuadas com altura de minúscula.
+    Como no mockup ("CENARIO", "DIARIO", "SIMULAÇAO"), os textos nessa fonte perdem os acentos e mantêm
+    o Ç (`Ui.pixel`). Textos em Chakra Petch mantêm a acentuação.
+16. **Legenda**: até 4 itens ficam numa linha só (modos 1–3); o modo 4 usa 3 colunas × 2 linhas.
+17. **"Como terminou"**: nos modos 2–4 mostra só eventos decisivos (rocha, explosão, fantasma sumindo,
+    fruta); no modo 1, que só tem movimentos, mostra as 3 últimas jogadas.
+18. **Modo 3 no fim**: vence quem usou menos movimentos no total (válidos + inválidos); se empatar,
+    "EMPATE!". O placar do mais rápido ganha o chip amarelo "VENCEU".
+19. **Transição para o fim**: a tela de jogo espera 1,3 s (2,3 s se houver animação de morte) antes de
+    abrir a tela de fim, para o jogador ver o último lance; os sons de fruta/morte terminam naturalmente.

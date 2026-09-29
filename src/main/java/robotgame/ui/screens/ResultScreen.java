@@ -259,7 +259,7 @@ public class ResultScreen implements Tela {
             return "EXPLODIU";
         }
         if (resultado.achou(r)) {
-            return r == destaque && modo == ModoJogo.NORMAL_X_INTELIGENTE ? "MAIS RÁPIDO" : "ACHOU";
+            return r == destaque && modo == ModoJogo.NORMAL_X_INTELIGENTE ? "VENCEU" : "ACHOU";
         }
         return "NÃO ACHOU";
     }
