@@ -17,8 +17,7 @@ public class Simulacao {
     private final Tabuleiro tabuleiro;
     private final Robo[] robos;
     private final Random random = new Random();
-    private Consumer<EventoPartida> ouvinte = evento -> {
-    };
+    private Consumer<EventoPartida> ouvinte = evento -> {};
 
     private int vez;
     private int rodadas;
