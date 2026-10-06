@@ -7,7 +7,7 @@ import robotgame.ui.partida.ConfiguracaoPartida;
 import robotgame.ui.screens.Navegador;
 import robotgame.ui.theme.Tema;
 
-public class RobotGameApp extends Application {
+public class wRobotGameApp extends Application {
 
     @Override
     public void start(Stage palco) {
