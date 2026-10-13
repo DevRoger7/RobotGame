@@ -12,10 +12,6 @@ import robotgame.modelo.Rocha;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.components.Sprites;
 
-/**
- * O que o jogador montou no menu e no cenário. Guarda os obstáculos colocados para que
- * "Jogar de novo" recrie exatamente o mesmo tabuleiro.
- */
 public class ConfiguracaoPartida {
 
     public enum TipoObstaculo { FANTASMA, ROCHA }
@@ -76,7 +72,6 @@ public class ConfiguracaoPartida {
         return obstaculos;
     }
 
-    /** Tabuleiro com a fruta e os obstáculos colocados (validados pelo próprio {@link Tabuleiro}). */
     public Tabuleiro criarTabuleiro() {
         Tabuleiro tabuleiro = new Tabuleiro(xFruta, yFruta);
         if (modo.isComObstaculos()) {
@@ -88,7 +83,6 @@ public class ConfiguracaoPartida {
         return tabuleiro;
     }
 
-    /** Mesmos robôs que a interface anterior criava para cada modo. */
     public Robo[] criarRobos() {
         if (modo.getQuantidadeRobos() == 1) {
             return new Robo[]{new Robo(cor1)};

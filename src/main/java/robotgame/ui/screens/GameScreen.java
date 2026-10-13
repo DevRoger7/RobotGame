@@ -39,16 +39,8 @@ import robotgame.ui.partida.DiarioPartida;
 import robotgame.ui.partida.ResultadoPartida;
 import robotgame.ui.theme.Tema;
 
-/**
- * Tela de jogo. Modos 2, 3 e 4: simulação automática com placar, diário, legenda, controles e velocidade.
- * Modo 1 (variante manual): o jogador move com as setas ou com o D-pad.
- *
- * <p>A condução da partida (início com música, liberação, passos, morte, pausa, fim) é a mesma da
- * interface anterior; a tela só observa os eventos para desenhar.
- */
 public class GameScreen implements Tela {
 
-    // Intervalo "Normal" da interface anterior; o slider de velocidade muda só o ritmo da Timeline.
     private static final Duration INTERVALO_SIMULACAO = Duration.millis(700);
     private static final double[] INTERVALOS_MS = {1400, 1000, 700, 450, 250};
     private static final Duration LIMITE_MUSICA_INICIO = Duration.seconds(6);
@@ -138,8 +130,6 @@ public class GameScreen implements Tela {
         comecarPartida();
     }
 
-    // ------------------------------------------------------------------ montagem
-
     private void montarSobreposicoes() {
         startLabel.setStyle(startLabel.getStyle()
                 + "-fx-effect: dropshadow(gaussian, black, 14, 0.7, 0, 0);");
@@ -194,8 +184,6 @@ public class GameScreen implements Tela {
         return new NeonCard("LEGENDA", grade);
     }
 
-    // ------------------------------------------------------------------ início
-
     private void comecarPartida() {
         congelado = true;
         mensagem.mostrar("STATUS", "Prepare-se...", Tema.CIANO);
@@ -245,8 +233,6 @@ public class GameScreen implements Tela {
         animacaoBoca.setCycleCount(Timeline.INDEFINITE);
         animacaoBoca.play();
     }
-
-    // ------------------------------------------------------------------ simulação (modos 2–4)
 
     private void iniciarSimulacao() {
         simulacao = new Simulacao(modo, tabuleiro, robos);
@@ -301,8 +287,6 @@ public class GameScreen implements Tela {
         }
     }
 
-    // ------------------------------------------------------------------ modo manual
-
     private void mover(String direcao) {
         if (congelado || pausado || terminada) {
             return;
@@ -316,7 +300,6 @@ public class GameScreen implements Tela {
             aoEvento(new EventoPartida(achou ? EventoPartida.Tipo.ACHOU_ALIMENTO : EventoPartida.Tipo.MOVEU,
                     robo, direcao, robo.getX(), robo.getY(), null));
         } catch (MovimentoInvalidoException e) {
-            // O robô já publicou o evento INVALIDO (contado em movimentosInvalidos).
         }
         atualizarPainel();
         mostrarDica();
@@ -338,8 +321,6 @@ public class GameScreen implements Tela {
         }
         mensagem.mostrar("DICA", onde != null ? "Quase lá! A fruta está " + onde + "." : "Leve o pacman até a fruta.");
     }
-
-    // ------------------------------------------------------------------ eventos → desenho
 
     private void aoEvento(EventoPartida e) {
         diario.registrar(e);
@@ -394,8 +375,6 @@ public class GameScreen implements Tela {
             }
         }
     }
-
-    // ------------------------------------------------------------------ pausa, som, teclado
 
     private boolean podePausar() {
         return !congelado && !terminada;
@@ -478,8 +457,6 @@ public class GameScreen implements Tela {
         }
     }
 
-    // ------------------------------------------------------------------ fim e saída
-
     private void finalizar(String resultado) {
         terminada = true;
         pararAnimacoes();
@@ -539,7 +516,6 @@ public class GameScreen implements Tela {
             });
         }
         if (indoParaFim) {
-            // Deixa terminar o som de fruta/morte do último lance; o resto para.
             sons.pararInicio();
             sons.pararWakawaka();
         } else {

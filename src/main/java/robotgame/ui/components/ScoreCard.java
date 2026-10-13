@@ -7,7 +7,6 @@ import javafx.scene.paint.Color;
 
 import robotgame.ui.theme.Tema;
 
-/** Placar de um pacman: sprite, nome na cor do pacman, subtítulo, chip de status e três {@link StatTile}. */
 public class ScoreCard extends NeonCard {
 
     private final Chip chip;

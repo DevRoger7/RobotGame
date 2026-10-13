@@ -8,7 +8,6 @@ import javafx.scene.shape.Circle;
 
 import robotgame.ui.theme.Tema;
 
-/** Etiqueta arredondada de status: "● ATIVO", "● EXPLODIU"... */
 public class Chip extends HBox {
 
     private final Circle ponto = new Circle(3.5);

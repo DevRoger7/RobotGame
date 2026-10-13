@@ -12,10 +12,6 @@ import javafx.scene.layout.StackPane;
 import robotgame.ui.partida.CoresPacman;
 import robotgame.ui.theme.Tema;
 
-/**
- * Linha de botões circulares, um por cor de pacman (sprite tingido). O selecionado ganha anel amarelo;
- * a cor do outro pacman (modos de 2 robôs) aparece com anel tracejado e o número dele.
- */
 public class ColorSwatchRow extends HBox {
 
     private final Map<String, StackPane> botoes = new LinkedHashMap<>();
@@ -44,11 +40,6 @@ public class ColorSwatchRow extends HBox {
         }
     }
 
-    /**
-     * @param selecionada cor do pacman que está sendo escolhido
-     * @param numeroSelecionado número desse pacman (0 = não mostrar)
-     * @param outra cor do outro pacman (nula no modo de 1 robô)
-     */
     public void mostrar(String selecionada, int numeroSelecionado, String outra) {
         botoes.forEach((nome, botao) -> {
             botao.getStyleClass().removeAll("selecionado", "outro");

@@ -10,7 +10,6 @@ import javafx.scene.layout.VBox;
 import robotgame.modelo.ModoJogo;
 import robotgame.ui.theme.Tema;
 
-/** Cabeçalho das telas de jogo: logo, barra de passos e etiqueta do modo. */
 public class AppHeader extends HBox {
 
     public AppHeader(ModoJogo modo, StepperBar.Passo passo) {

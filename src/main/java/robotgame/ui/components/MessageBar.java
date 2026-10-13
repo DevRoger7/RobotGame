@@ -8,7 +8,6 @@ import javafx.scene.paint.Color;
 
 import robotgame.ui.theme.Tema;
 
-/** Faixa abaixo do tabuleiro: etiqueta (ÚLTIMO, DICA, STATUS, FIM...) + frase. */
 public class MessageBar extends HBox {
 
     private final Label etiqueta = Ui.label("", "tag");

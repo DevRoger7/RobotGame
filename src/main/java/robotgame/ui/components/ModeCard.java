@@ -7,7 +7,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-/** Cartão de modo do menu: número, título, descrição e etiqueta. Selecionado = brilho amarelo. */
 public class ModeCard extends HBox {
 
     private final Label numero;

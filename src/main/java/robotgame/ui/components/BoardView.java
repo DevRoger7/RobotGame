@@ -38,10 +38,6 @@ import robotgame.modelo.Tabuleiro;
 import robotgame.ui.partida.CoresPacman;
 import robotgame.ui.theme.Tema;
 
-/**
- * Tabuleiro 4×4 com moldura dupla, eixos e as camadas: casas ({@link CellView}), pacmans (animados por
- * translação) e sobreposições (START, PAUSADO, FIM DE JOGO). Só desenha: quem decide é o jogo.
- */
 public class BoardView extends StackPane {
 
     private static final int N = Tabuleiro.TAMANHO;
@@ -68,7 +64,6 @@ public class BoardView extends StackPane {
         if (compacto) {
             getStyleClass().add("compacto");
         }
-        // "borda dupla 6 + padding 8": o Region já desconta a borda dupla (6) dos insets.
         double margem = compacto ? 6 : 8;
         double borda = 6;
         double lado = N * celula;
@@ -144,8 +139,6 @@ public class BoardView extends StackPane {
         Ui.tamanhoFixo(this, total, total);
     }
 
-    // ---------------------------------------------------------------- conteúdo fixo
-
     public void setFruta(int x, int y, Image imagem) {
         for (CellView[] coluna : casas) {
             for (CellView casa : coluna) {
@@ -155,7 +148,6 @@ public class BoardView extends StackPane {
         casas[x][y].setFruta(imagem);
     }
 
-    /** Copia os obstáculos atuais do tabuleiro para as casas. */
     public void carregarObstaculos(Tabuleiro tabuleiro) {
         for (int x = 0; x < N; x++) {
             for (int y = 0; y < N; y++) {
@@ -187,7 +179,6 @@ public class BoardView extends StackPane {
         return sobreposicao;
     }
 
-    /** Clique numa casa (cenário e mini-tabuleiro). */
     public void setAoClicar(BiConsumer<Integer, Integer> aoClicar) {
         this.aoClicar = aoClicar;
         for (CellView[] coluna : casas) {
@@ -197,7 +188,6 @@ public class BoardView extends StackPane {
         }
     }
 
-    /** Imagem de prévia ao passar o mouse numa casa (nulo = sem prévia). */
     public void setPrevia(BiFunction<Integer, Integer, Image> previa) {
         this.previa = previa;
     }
@@ -208,8 +198,6 @@ public class BoardView extends StackPane {
         }
         casa.setPrevia(dentro ? previa.apply(casa.getX(), casa.getY()) : null);
     }
-
-    // ---------------------------------------------------------------- pacmans
 
     public void setRobos(Robo[] robos) {
         this.robos = robos;
@@ -239,10 +227,6 @@ public class BoardView extends StackPane {
         }
     }
 
-    /**
-     * Leva cada pacman visível para a casa atual do seu robô (deslizando por {@code duracao}) e
-     * atualiza o destaque das casas.
-     */
     public void sincronizar(Duration duracao) {
         Map<Integer, List<Robo>> porCasa = new LinkedHashMap<>();
         for (Robo r : robos) {
@@ -281,7 +265,6 @@ public class BoardView extends StackPane {
         return r.isAtivo() || morrendo.contains(r);
     }
 
-    /** Tremida horizontal curta: movimento inválido. */
     public void tremer(Robo robo) {
         PacmanNode no = pacmans.get(robo);
         if (no == null) {
@@ -296,7 +279,6 @@ public class BoardView extends StackPane {
         tocar(t);
     }
 
-    /** Avança um pouco na direção da rocha e volta. */
     public void baterNaRocha(Robo robo, String direcao, Duration duracao) {
         PacmanNode no = pacmans.get(robo);
         if (no == null) {
@@ -317,7 +299,6 @@ public class BoardView extends StackPane {
         tocar(t);
     }
 
-    /** O robô vai até a casa do fantasma e some girando (mesma animação de morte de antes). */
     public void explodir(Robo robo, Duration deslize, Runnable depois) {
         PacmanNode no = pacmans.get(robo);
         if (no == null) {
@@ -349,8 +330,6 @@ public class BoardView extends StackPane {
     public boolean temAnimacaoDeMorte() {
         return !morrendo.isEmpty();
     }
-
-    // ---------------------------------------------------------------- animações
 
     private void tocar(Animation animacao) {
         animacoes.add(animacao);
@@ -385,8 +364,6 @@ public class BoardView extends StackPane {
         }
         animacoes.clear();
     }
-
-    // ---------------------------------------------------------------- nós internos
 
     private final class PacmanNode extends StackPane {
 
@@ -463,7 +440,6 @@ public class BoardView extends StackPane {
         }
     }
 
-    /** Listras vermelhas diagonais da faixa "Proibido" (fora do tabuleiro). */
     private static final class Pattern {
 
         final ImagePattern padrao;
@@ -482,7 +458,6 @@ public class BoardView extends StackPane {
         }
     }
 
-    /** Encadeia um onFinished sem perder o que a animação já tinha. */
     private static final class EventoFim {
 
         static void encadear(Animation a, Runnable extra) {

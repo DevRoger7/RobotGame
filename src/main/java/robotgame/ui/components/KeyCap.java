@@ -2,7 +2,6 @@ package robotgame.ui.components;
 
 import javafx.scene.control.Label;
 
-/** Tecla desenhada ("P", "M", setas) usada dentro de botões e textos de ajuda. */
 public class KeyCap extends Label {
 
     public KeyCap(String tecla, boolean claro) {

@@ -22,7 +22,6 @@ public final class Imagens {
         return recortarMargens(carregar(arquivo));
     }
 
-    // Apaga só o fundo claro ligado à borda, preservando áreas claras internas (olhos, brilho).
     public static Image carregarSemFundo(String arquivo) {
         Image original = carregar(arquivo);
         int w = (int) original.getWidth();

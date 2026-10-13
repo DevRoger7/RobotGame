@@ -16,10 +16,6 @@ import robotgame.ui.components.MessageBar;
 import robotgame.ui.components.StepperBar;
 import robotgame.ui.components.Ui;
 
-/**
- * Esqueleto comum de Cenário, Jogo, Jogo manual e Fim: cabeçalho (84) e área principal (660) com a
- * coluna do tabuleiro (660) e o painel direito (548).
- */
 final class LayoutJogo {
 
     static final double LARGURA_PAINEL = 548;
@@ -31,7 +27,6 @@ final class LayoutJogo {
     static VBox montar(ModoJogo modo, StepperBar.Passo passo, BoardView tabuleiro, MessageBar mensagem,
                        Node painelDireito) {
         VBox esquerda = new VBox(14, tabuleiro, mensagem);
-        // Borda esquerda do tabuleiro alinhada com a do cabeçalho.
         esquerda.setAlignment(Pos.TOP_LEFT);
         Ui.tamanhoFixo(esquerda, 660, ALTURA_AREA);
 
@@ -55,7 +50,6 @@ final class LayoutJogo {
         r.setMaxHeight(Double.MAX_VALUE);
     }
 
-    /** Deixa o bloco encolher (o conteúdo que não couber é recortado) em vez de empurrar o layout. */
     static void recortar(Region r) {
         r.setMinHeight(0);
         javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();

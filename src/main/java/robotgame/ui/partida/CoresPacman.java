@@ -6,7 +6,6 @@ import java.util.Map;
 
 import javafx.scene.paint.Color;
 
-/** Cores de pacman oferecidas no menu (as mesmas da interface anterior) e cores dos fantasmas. */
 public final class CoresPacman {
 
     private CoresPacman() {
@@ -32,7 +31,6 @@ public final class CoresPacman {
         FANTASMA.put("ciano", Color.web("#3df0ff"));
     }
 
-    /** Ordem em que os fantasmas são colocados no modo 4 (a mesma de antes). */
     public static final List<String> ORDEM_FANTASMAS = List.of("azul", "vermelho", "rosa", "ciano");
 
     public static List<String> nomes() {

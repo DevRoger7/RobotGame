@@ -32,7 +32,6 @@ import robotgame.ui.partida.ConfiguracaoPartida.TipoObstaculo;
 import robotgame.ui.partida.CoresPacman;
 import robotgame.ui.theme.Tema;
 
-/** Modo 4: o jogador espalha fantasmas e rochas antes da simulação. */
 public class CenarioScreen implements Tela {
 
     private final Navegador navegador;
@@ -64,7 +63,6 @@ public class CenarioScreen implements Tela {
         board.setAoClicar(this::clicarCasa);
         board.setPrevia(this::previa);
 
-        // 1 · ESCOLHA O QUE COLOCAR
         cartaoFantasma = ferramenta(iconeFantasma, "FANTASMA", proximoFantasma, contagemFantasmas,
                 TipoObstaculo.FANTASMA);
         cartaoRocha = ferramenta(Sprites.view(Sprites.rocha(40), 40), "ROCHA",
@@ -73,7 +71,6 @@ public class CenarioScreen implements Tela {
         NeonCard escolha = new NeonCard("1 · ESCOLHA O QUE COLOCAR", cartaoFantasma, cartaoRocha, apoio);
         escolha.setSpacing(8);
 
-        // O QUE CADA COISA FAZ
         HBox doisPacmans = new HBox(-6);
         for (var robo : config.criarRobos()) {
             doisPacmans.getChildren().add(Sprites.pacman(CoresPacman.pacman(robo.getCor()), 18));
@@ -90,7 +87,6 @@ public class CenarioScreen implements Tela {
         LayoutJogo.crescer(cartaoLegenda);
         LayoutJogo.recortar(cartaoLegenda);
 
-        // Ações
         Button voltar = Ui.secundario("Voltar", 50);
         voltar.setGraphic(Icones.chevronEsquerda(Tema.TEXTO));
         voltar.setOnAction(e -> navegador.irParaMenu(config));
@@ -115,8 +111,6 @@ public class CenarioScreen implements Tela {
         return raiz;
     }
 
-    // Recoloca o que já estava na configuração (ex.: voltou do menu); descarta o que o tabuleiro recusar
-    // (por exemplo, se a fruta foi para uma casa que tinha obstáculo).
     private void restaurarObstaculos() {
         Iterator<ObstaculoColocado> it = config.getObstaculos().iterator();
         while (it.hasNext()) {
@@ -159,7 +153,6 @@ public class CenarioScreen implements Tela {
         return tipo == TipoObstaculo.FANTASMA ? new Fantasma(cor) : new Rocha();
     }
 
-    // Mesmas regras da interface anterior: casa ocupada → remove; senão tenta colocar e o Tabuleiro valida.
     private void clicarCasa(int x, int y) {
         if (tabuleiro.getObstaculo(x, y) != null) {
             tabuleiro.removerObstaculo(x, y);

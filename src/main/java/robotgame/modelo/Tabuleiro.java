@@ -58,11 +58,6 @@ public class Tabuleiro {
         obstaculos[x][y] = o;
     }
 
-    /**
-     * Indica se uma rocha (ou qualquer obstáculo que bloqueie a passagem) em (x, y) impediria os robôs de
-     * ir de (0,0) até o alimento. Só obstáculos que bloqueiam contam: o fantasma elimina o robô e some,
-     * então nunca prende ninguém para sempre.
-     */
     public boolean fechariaCaminhoAoAlimento(int x, int y) {
         boolean[][] visitada = new boolean[TAMANHO][TAMANHO];
         Deque<int[]> fila = new ArrayDeque<>();

@@ -26,10 +26,6 @@ import robotgame.ui.partida.ConfiguracaoPartida;
 import robotgame.ui.partida.ResultadoPartida;
 import robotgame.ui.theme.Tema;
 
-/**
- * Uma única Stage/Scene; cada tela troca o conteúdo da área de design (1280×800), que é escalada
- * proporcionalmente para caber na janela.
- */
 public class Navegador {
 
     private final StackPane area = new StackPane();
@@ -112,7 +108,6 @@ public class Navegador {
         nova.aoMostrar();
     }
 
-    // Fundo #050514 com pontos #15154a de 1px a cada 24px (tile gerado por código).
     private static Background fundoPontilhado() {
         WritableImage tile = new WritableImage(24, 24);
         for (int y = 0; y < 24; y++) {

@@ -12,13 +12,8 @@ import robotgame.modelo.Fantasma;
 import robotgame.modelo.Robo;
 import robotgame.ui.theme.Tema;
 
-/**
- * Modelo observável do diário: recebe os {@link EventoPartida} publicados pelo jogo e os transforma em
- * frases. Não decide nada sobre a partida.
- */
 public class DiarioPartida {
 
-    /** @param evento evento de origem; nulo na entrada "Partida iniciada". */
     public record Entrada(int numero, Color cor, String texto, EventoPartida evento) {
     }
 
@@ -83,7 +78,6 @@ public class DiarioPartida {
         };
     }
 
-    // "y = −1": a coordenada fora do tabuleiro que o robô tentou alcançar.
     private static String alvo(EventoPartida e) {
         return switch (e.direcao()) {
             case "up" -> "y = " + numero(e.y() + 1);

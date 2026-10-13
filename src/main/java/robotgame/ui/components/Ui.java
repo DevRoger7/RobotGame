@@ -13,13 +13,11 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
-/** Fábricas pequenas para rótulos e botões no estilo do tema. */
 public final class Ui {
 
     private Ui() {
     }
 
-    // Classes que usam a Press Start 2P (ver pixel()).
     private static final Set<String> CLASSES_PIXEL = Set.of("pixel", "card-title", "mode-title", "step-pill",
             "tag", "mode-tag", "fim-titulo", "stat-value", "axis-label", "diary-num", "aba", "keycap");
 
@@ -33,10 +31,6 @@ public final class Ui {
         return l;
     }
 
-    /**
-     * A Press Start 2P desenha maiúsculas acentuadas com altura de minúscula; como no mockup
-     * ("CENARIO", "SIMULAÇAO"), os acentos saem e só o Ç fica.
-     */
     public static String pixel(String texto) {
         if (texto == null) {
             return null;
@@ -52,7 +46,6 @@ public final class Ui {
         return l;
     }
 
-    /** Botão primário colorido (classe {@code btn-verde} ou {@code btn-laranja}). */
     public static Button primario(String texto, String cor, double altura) {
         Button b = botao(pixel(texto), "btn-primary", cor);
         b.setMinHeight(altura);
@@ -70,7 +63,6 @@ public final class Ui {
     private static Button botao(String texto, String... classes) {
         Button b = new Button(texto);
         b.getStyleClass().addAll(classes);
-        // O teclado é tratado na Scene; o foco não pode "roubar" espaço e setas.
         b.setFocusTraversable(false);
         b.setMaxWidth(Double.MAX_VALUE);
         animarHover(b);
@@ -107,7 +99,6 @@ public final class Ui {
         return h;
     }
 
-    /** Faz os filhos dividirem a largura igualmente. */
     public static HBox linhaIgual(double espaco, Node... nos) {
         HBox h = new HBox(espaco, nos);
         for (Node n : nos) {

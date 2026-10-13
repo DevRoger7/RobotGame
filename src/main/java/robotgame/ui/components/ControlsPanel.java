@@ -12,7 +12,6 @@ import javafx.scene.layout.VBox;
 
 import robotgame.ui.theme.Tema;
 
-/** CONTROLES: Pausar [P], Som [M], Novo jogo e (opcional) slider de velocidade 1–5. */
 public class ControlsPanel extends NeonCard {
 
     private static final String[] NOMES_VELOCIDADE = {"Muito lento", "Lento", "Normal", "Rápido", "Muito rápido"};
@@ -34,7 +33,6 @@ public class ControlsPanel extends NeonCard {
         for (Button b : new Button[]{pausa, som, novoJogo}) {
             b.setStyle("-fx-padding: 0 6 0 6;");
         }
-        // "Som: desligado" precisa de mais espaço que "Novo jogo".
         GridPane botoes = new GridPane();
         botoes.setHgap(10);
         for (double largura : new double[]{33, 37, 30}) {
@@ -101,7 +99,6 @@ public class ControlsPanel extends NeonCard {
         }
     }
 
-    // Parte do trilho à esquerda do "thumb" em amarelo.
     private void pintarTrilho() {
         if (velocidade == null) {
             return;

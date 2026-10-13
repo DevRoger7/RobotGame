@@ -5,7 +5,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-/** Bloco com rótulo pequeno e valor em pixel-font (POSIÇÃO, VÁLIDOS, X (0–3)...). */
 public class StatTile extends VBox {
 
     private final Label valor;

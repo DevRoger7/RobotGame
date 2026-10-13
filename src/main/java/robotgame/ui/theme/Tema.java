@@ -7,7 +7,6 @@ import java.io.UncheckedIOException;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-/** Design tokens da interface "Labirinto Neon": cores, famílias de fonte e a folha de estilo. */
 public final class Tema {
 
     private Tema() {
@@ -16,7 +15,6 @@ public final class Tema {
     public static final double LARGURA = 1280;
     public static final double ALTURA = 800;
 
-    // Nomes reais das famílias, conferidos com Font.getFamilies() depois de Font.loadFont.
     public static final String FONTE_PIXEL = "Press Start 2P";
     public static final String FONTE_TEXTO = "Chakra Petch Medium";
     public static final String FONTE_SEMI = "Chakra Petch SemiBold";

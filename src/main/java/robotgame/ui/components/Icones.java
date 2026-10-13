@@ -7,7 +7,6 @@ import javafx.scene.shape.SVGPath;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 
-/** Ícones vetoriais simples (a fonte pixel não tem esses símbolos). */
 public final class Icones {
 
     private Icones() {
@@ -54,7 +53,6 @@ public final class Icones {
         return new javafx.scene.Group(alto, ondas);
     }
 
-    /** Triângulo apontando para a direção ("up", "down", "left", "right"). */
     public static Node seta(String direcao, Color cor, double tamanho) {
         Polygon t = new Polygon(0, tamanho, tamanho / 2, 0, tamanho, tamanho);
         t.setFill(cor);
@@ -67,7 +65,6 @@ public final class Icones {
         return t;
     }
 
-    /** Estrela de explosão (não há imagem de explosão entre os assets). */
     public static Node explosao(double raio) {
         int pontas = 10;
         Polygon externa = estrela(pontas, raio, raio * 0.48);
@@ -98,7 +95,6 @@ public final class Icones {
         return p;
     }
 
-    // Group para que a escala entre nos limites usados no layout.
     private static Node preenchido(String caminho, Color cor, double escala) {
         SVGPath p = new SVGPath();
         p.setContent(caminho);

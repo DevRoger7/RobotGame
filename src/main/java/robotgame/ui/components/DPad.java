@@ -9,7 +9,6 @@ import javafx.scene.layout.GridPane;
 
 import robotgame.ui.theme.Tema;
 
-/** Botões de direção (▲ em cima; ◀ ▼ ▶ embaixo). Chamam o mesmo movimento das setas do teclado. */
 public class DPad extends GridPane {
 
     private final Map<String, Button> botoes = new LinkedHashMap<>();
@@ -33,7 +32,6 @@ public class DPad extends GridPane {
         add(b, coluna, linha);
     }
 
-    /** Destaca em amarelo o botão da última direção. */
     public void destacar(String direcao) {
         botoes.forEach((d, b) -> {
             b.getStyleClass().remove("destaque");

@@ -17,12 +17,6 @@ import javafx.stage.Screen;
 
 import robotgame.ui.Imagens;
 
-/**
- * Sprites do jogo, carregados dos mesmos arquivos e com o mesmo tratamento de antes ({@link Imagens}).
- *
- * <p>As imagens originais são grandes (até 1254 px). Para ficarem nítidas com {@code setSmooth(false)},
- * cada tamanho de exibição recebe uma cópia reduzida em memória por média de área; os arquivos não mudam.
- */
 public final class Sprites {
 
     private Sprites() {
@@ -56,7 +50,6 @@ public final class Sprites {
                 : Imagens.carregarSemFundo("fruta_" + nome + ".png"));
     }
 
-    /** ImageView de sprite: nítido, proporção preservada, cabendo num quadrado de {@code tamanho}. */
     public static ImageView view(Image imagem, double tamanho) {
         ImageView view = new ImageView(imagem);
         view.setSmooth(false);
@@ -66,7 +59,6 @@ public final class Sprites {
         return view;
     }
 
-    /** Pacman tingido na cor do robô (mesmo mecanismo da interface anterior: Blend SRC_ATOP). */
     public static ImageView pacman(Color cor, double tamanho) {
         ImageView sprite = view(pacmanAberto(tamanho), tamanho);
         tingir(sprite, cor, tamanho);
@@ -90,7 +82,6 @@ public final class Sprites {
         });
     }
 
-    // Redução por média de área (com alfa pré-multiplicado): sem serrilhado, ao contrário do vizinho mais próximo.
     private static Image reduzirPorArea(Image original, int ladoMaximo) {
         int w = (int) original.getWidth();
         int h = (int) original.getHeight();

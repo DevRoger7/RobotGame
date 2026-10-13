@@ -16,9 +16,4 @@ public class Rocha extends Obstaculo {
     public String getNome() {
         return "Rocha";
     }
-
-    @Override
-    public char getSimbolo() {
-        return 'P';
-    }
 }

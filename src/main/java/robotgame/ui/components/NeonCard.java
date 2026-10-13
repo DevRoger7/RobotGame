@@ -5,7 +5,6 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-/** Cartão com borda azul-neon e título opcional em pixel-font amarela. */
 public class NeonCard extends VBox {
 
     private final Label titulo;

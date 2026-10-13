@@ -12,13 +12,11 @@ import javafx.scene.shape.Rectangle;
 
 import robotgame.ui.theme.Tema;
 
-/** Grade de legenda: ícone + nome + descrição curta. */
 public class LegendGrid extends GridPane {
 
     private final int colunas;
     private int total;
 
-    /** Colunas para uma legenda de {@code itens} itens: uma linha até 4, senão 3 por linha. */
     public static int colunasPara(int itens) {
         return itens <= 4 ? itens : 3;
     }
@@ -46,7 +44,6 @@ public class LegendGrid extends GridPane {
         return this;
     }
 
-    /** Ícone da faixa "Proibido" (listras vermelhas). */
     public static Node iconeProibido() {
         StackPane p = new StackPane();
         for (int i = 0; i < 5; i++) {

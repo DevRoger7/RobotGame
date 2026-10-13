@@ -10,7 +10,6 @@ import javafx.scene.layout.HBox;
 import robotgame.modelo.ModoJogo;
 import robotgame.ui.theme.Tema;
 
-/** Barra de passos "1 MENU › 2 CENÁRIO › 3 JOGO › 4 FIM" (modos sem obstáculos omitem CENÁRIO). */
 public class StepperBar extends HBox {
 
     public enum Passo {

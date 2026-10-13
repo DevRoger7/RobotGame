@@ -21,7 +21,6 @@ import robotgame.modelo.Rocha;
 import robotgame.ui.partida.CoresPacman;
 import robotgame.ui.theme.Tema;
 
-/** Uma casa do tabuleiro: fundo, rótulo "(x,y)", bolinha e o conteúdo fixo (fruta, obstáculo, explosão). */
 public class CellView extends StackPane {
 
     private final int x;
@@ -91,7 +90,6 @@ public class CellView extends StackPane {
         atualizar();
     }
 
-    /** Cor do pacman que está na casa (nulo se nenhum), usada na borda e no brilho. */
     public void setCorPacman(Color cor) {
         if (cor == null ? corPacman == null : cor.equals(corPacman)) {
             return;
@@ -105,7 +103,6 @@ public class CellView extends StackPane {
         atualizar();
     }
 
-    /** Prévia de colocação: borda tracejada amarela + sprite a 55% de opacidade. */
     public void setPrevia(Image imagem) {
         previa.getChildren().clear();
         if (imagem != null) {
@@ -114,7 +111,6 @@ public class CellView extends StackPane {
         atualizar();
     }
 
-    /** O fantasma some (fade) e a casa passa a mostrar a explosão (escala + fade). */
     public void animarExplosao(java.util.function.Consumer<javafx.animation.Animation> tocar) {
         Node antigo = conteudo.getChildren().isEmpty() ? null : conteudo.getChildren().get(0);
         obstaculo = null;

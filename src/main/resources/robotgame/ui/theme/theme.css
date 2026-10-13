@@ -1,5 +1,3 @@
-/* Tema "Labirinto Neon". JavaFX CSS: espaçamentos ficam em spacing/padding dos containers. */
-
 .root {
     -fx-background-color: #050514;
     -fx-font-family: "Chakra Petch Medium";
@@ -13,8 +11,6 @@
     -fx-text-fill: #f4f4ff;
 }
 
-/* ---------- tipografia ---------- */
-
 .pixel { -fx-font-family: "Press Start 2P"; }
 .semi { -fx-font-family: "Chakra Petch SemiBold"; }
 .bold { -fx-font-family: "Chakra Petch"; -fx-font-weight: bold; }
@@ -23,8 +19,6 @@
 .ciano { -fx-text-fill: #3df0ff; }
 .verde { -fx-text-fill: #4cff8a; }
 .vermelho { -fx-text-fill: #ff4d5e; }
-
-/* ---------- cartões ---------- */
 
 .neon-card {
     -fx-background-color: #0c0c2c;
@@ -61,7 +55,6 @@
     -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.45), 18, 0.2, 0, 0);
 }
 
-/* moldura dupla do tabuleiro: duas bordas de 2px com 2px de intervalo */
 .board-frame {
     -fx-background-color: #070720;
     -fx-background-radius: 22;
@@ -89,8 +82,6 @@
     -fx-font-size: 11px;
     -fx-text-fill: #8488cc;
 }
-
-/* ---------- botões ---------- */
 
 .button {
     -fx-background-insets: 0;
@@ -177,8 +168,6 @@
     -fx-text-fill: #f4f4ff;
 }
 
-/* ---------- blocos internos ---------- */
-
 .tile {
     -fx-background-color: #10103a;
     -fx-background-radius: 10;
@@ -226,8 +215,6 @@
     -fx-padding: 11 14 10 14;
 }
 
-/* ---------- stepper ---------- */
-
 .step-pill {
     -fx-font-family: "Press Start 2P";
     -fx-font-size: 9px;
@@ -253,8 +240,6 @@
 .step-pill.futuro {
     -fx-border-style: segments(5, 4);
 }
-
-/* ---------- menu ---------- */
 
 .mode-number {
     -fx-font-family: "Press Start 2P";
@@ -353,8 +338,6 @@
     -fx-text-fill: #ff4d5e;
 }
 
-/* ---------- diário e legenda ---------- */
-
 .diary-row {
     -fx-background-radius: 8;
     -fx-padding: 3 10 3 10;
@@ -380,8 +363,6 @@
     -fx-text-fill: #9da0d8;
 }
 
-/* ---------- slider ---------- */
-
 .slider { -fx-padding: 2 0 2 0; }
 
 .slider .track {
@@ -402,8 +383,6 @@
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(255,225,77,0.6), 10, 0.3, 0, 0);
 }
-
-/* ---------- fim de jogo ---------- */
 
 .fim-titulo {
     -fx-font-family: "Press Start 2P";

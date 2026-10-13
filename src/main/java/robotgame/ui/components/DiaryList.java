@@ -13,7 +13,6 @@ import javafx.scene.shape.Circle;
 
 import robotgame.ui.partida.DiarioPartida.Entrada;
 
-/** Últimas entradas do diário, a mais nova em cima e destacada. Lê só o modelo do diário. */
 public class DiaryList extends VBox {
 
     private final ObservableList<Entrada> entradas;
@@ -32,7 +31,6 @@ public class DiaryList extends VBox {
         redesenhar();
     }
 
-    // Linha que não cabe inteira some (em vez de aparecer cortada pela borda do cartão).
     @Override
     protected void layoutChildren() {
         super.layoutChildren();
@@ -42,7 +40,6 @@ public class DiaryList extends VBox {
         }
     }
 
-    /** Solta o ouvinte do modelo (ao sair da tela). */
     public void desligar() {
         entradas.removeListener(ouvinte);
     }

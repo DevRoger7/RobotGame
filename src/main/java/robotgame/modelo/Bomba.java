@@ -12,9 +12,4 @@ public class Bomba extends Obstaculo {
     public String getNome() {
         return "Bomba";
     }
-
-    @Override
-    public char getSimbolo() {
-        return 'B';
-    }
 }

@@ -16,9 +16,4 @@ public class Fantasma extends Bomba {
     public String getNome() {
         return "Fantasma";
     }
-
-    @Override
-    public char getSimbolo() {
-        return 'F';
-    }
 }

@@ -29,7 +29,6 @@ import robotgame.ui.partida.ConfiguracaoPartida;
 import robotgame.ui.partida.CoresPacman;
 import robotgame.ui.theme.Tema;
 
-/** Menu: escolha do modo, das cores e da casa da fruta. */
 public class MenuScreen implements Tela {
 
     private static final String[][] MODOS = {
@@ -61,7 +60,6 @@ public class MenuScreen implements Tela {
         this.navegador = navegador;
         this.config = config;
 
-        // Cartão de título
         HBox bolinhas = new HBox(14);
         for (int i = 0; i < 3; i++) {
             Circle c = new Circle(6, Tema.BOLINHA);
@@ -88,7 +86,6 @@ public class MenuScreen implements Tela {
         cartaoTitulo.setPadding(new Insets(0, 44, 0, 44));
         Ui.tamanhoFixo(cartaoTitulo, 1232, 132);
 
-        // 1 · ESCOLHA O MODO
         NeonCard cartaoModos = new NeonCard("1 · ESCOLHA O MODO");
         cartaoModos.setSpacing(16);
         ModoJogo[] modos = ModoJogo.values();
@@ -103,7 +100,6 @@ public class MenuScreen implements Tela {
         }
         Ui.tamanhoFixo(cartaoModos, 640, 612);
 
-        // 2 · MONTE SUA PARTIDA
         cores = new ColorSwatchRow(42, this::escolherCor);
         aba1.setOnMouseClicked(e -> editar(1));
         aba2.setOnMouseClicked(e -> editar(2));
@@ -193,7 +189,6 @@ public class MenuScreen implements Tela {
         return config.getModo().getQuantidadeRobos() == 2 && config.getCor1().equals(config.getCor2());
     }
 
-    // Mesma validação de antes: o próprio Tabuleiro recusa (0,0) e casas fora de 0–3.
     private void escolherCasa(int x, int y) {
         try {
             new Tabuleiro(x, y);

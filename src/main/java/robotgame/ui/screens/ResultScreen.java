@@ -38,7 +38,6 @@ import robotgame.ui.partida.DiarioPartida;
 import robotgame.ui.partida.ResultadoPartida;
 import robotgame.ui.theme.Tema;
 
-/** Fim de jogo: tabuleiro final com a faixa "FIM DE JOGO", vencedor, placares e como terminou. */
 public class ResultScreen implements Tela {
 
     private static final Set<EventoPartida.Tipo> RELEVANTES = EnumSet.of(EventoPartida.Tipo.ROCHA,
@@ -53,7 +52,6 @@ public class ResultScreen implements Tela {
     private final Button botaoSom;
     private final VBox raiz;
 
-    // Textos calculados a partir do estado final
     private String titulo;
     private String detalhe;
     private String faixa;
@@ -87,7 +85,6 @@ public class ResultScreen implements Tela {
         MessageBar mensagem = new MessageBar(592);
         mensagem.mostrar("FIM", rodape);
 
-        // Painel direito
         NeonCard vencedor = new NeonCard(null);
         Node icone = destaque != null
                 ? Sprites.pacman(CoresPacman.pacman(destaque.getCor()), 64)
@@ -115,7 +112,6 @@ public class ResultScreen implements Tela {
         }
         Node linhaPlacares = Ui.linhaIgual(12, placares);
 
-        // No modo manual quase tudo é movimento: mostra as 3 últimas jogadas.
         comoTerminou = new DiaryList(resultado.diario().getEntradas(), 3, modo.isManual()
                 ? e -> e.evento() != null
                 : e -> e.evento() != null && RELEVANTES.contains(e.evento().tipo()));
@@ -184,7 +180,6 @@ public class ResultScreen implements Tela {
         VBox banda = new VBox(20, linhaTitulo, Ui.label(faixa, "fim-sub"));
         banda.getStyleClass().add("fim-faixa");
         banda.setAlignment(Pos.CENTER);
-        // O eixo Y ocupa a esquerda da moldura: desloca o conteúdo para centralizar sobre as casas.
         banda.setPadding(new Insets(34, 0, 30, BoardView.EIXO));
         banda.setMaxHeight(Region.USE_PREF_SIZE);
         banda.setTranslateY(-60);
@@ -193,8 +188,6 @@ public class ResultScreen implements Tela {
         camada.setPadding(new Insets(5));
         return camada;
     }
-
-    // ------------------------------------------------------------------ textos por modo
 
     private void calcularTextos() {
         Tabuleiro t = resultado.tabuleiro();
