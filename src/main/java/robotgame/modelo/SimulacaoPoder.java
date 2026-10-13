@@ -43,32 +43,34 @@ public class SimulacaoPoder {
         if (isTerminada()) {
             throw new IllegalStateException("A simulação já terminou.");
         }
-
-        while (true) {
-            int ator = vez;
-            vez = (vez + 1) % (robos.length + 1);
-            boolean ultimoDaRodada = vez == 0;
-
-            Simulacao.Passo passo = null;
-            if (podeJogar(ator)) {
-                passo = ator == robos.length ? turnoDoFantasma() : turnoDoPacman(robos[ator]);
-                verificarFim();
-            }
-
-            if (ultimoDaRodada && !isTerminada()) {
-                rodadas++;
-                for (EventoPartida evento : gerador.fimDaRodada(tabuleiro, robos)) {
-                    ouvinte.accept(evento);
-                }
-                verificarFim();
-            }
-
-            if (passo != null) {
-                return passo;
-            }
+        // Só acontece se o ator 0 já começar sem poder jogar (ex.: robos[0] eliminado antes da partida).
+        while (!podeJogar(vez)) {
+            avancarVez();
             if (isTerminada()) {
-                throw new IllegalStateException("Nenhum ator pode jogar.");
+                throw new IllegalStateException("A simulação já terminou.");
             }
+        }
+
+        int ator = vez;
+        Simulacao.Passo passo = ator == robos.length ? turnoDoFantasma() : turnoDoPacman(robos[ator]);
+        verificarFim();
+        // Deixa a vez sempre num ator que pode jogar. Não entra em loop: se nenhum pacman está ativo,
+        // verificarFim já terminou a partida; se algum está, ele pode jogar.
+        do {
+            avancarVez();
+        } while (!isTerminada() && !podeJogar(vez));
+        return passo;
+    }
+
+    // Passa a vez para o próximo ator; quando volta para o ator 0, fecha a rodada.
+    private void avancarVez() {
+        vez = (vez + 1) % (robos.length + 1);
+        if (vez == 0 && !isTerminada()) {
+            rodadas++;
+            for (EventoPartida evento : gerador.fimDaRodada(tabuleiro, robos)) {
+                ouvinte.accept(evento);
+            }
+            verificarFim();
         }
     }
 
@@ -119,6 +121,10 @@ public class SimulacaoPoder {
                 robo.perderPoder();
                 mensagem.append(". Comeu o fantasma inteligente");
                 publicar(EventoPartida.Tipo.COMEU_FANTASMA, robo, direcao, null);
+                // O fantasma esperto anda e pode estar parado em cima da fruta.
+                if (tabuleiro.alimentoEncontradoPor(robo)) {
+                    publicar(EventoPartida.Tipo.ACHOU_ALIMENTO, robo, direcao, null);
+                }
             } else {
                 robo.explodir();
                 mensagem.append(". Foi eliminado pelo fantasma inteligente!");

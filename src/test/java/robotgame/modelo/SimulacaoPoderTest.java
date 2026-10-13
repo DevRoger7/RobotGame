@@ -1,5 +1,6 @@
 package robotgame.modelo;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -330,5 +331,104 @@ class SimulacaoPoderTest {
 
         assertFalse(azul.isAtivo());
         assertEquals(Arrays.asList(azul, verde, rosa, null, verde, rosa, null), atores);
+    }
+
+    private static final String MENSAGEM_LIMITE =
+            "Limite de " + SimulacaoPoder.MAX_RODADAS + " rodadas atingido: nenhum pacman encontrou o alimento.";
+
+    // Joga até o fim e devolve quantos passos foram dados.
+    private int jogarAteOFim() {
+        int passos = 0;
+        while (!simulacao.isTerminada()) {
+            simulacao.proximoPasso();
+            passos++;
+        }
+        return passos;
+    }
+
+    @Test
+    void limiteDeMilRodadasSemFantasmaTerminaSemExcecao() throws Exception {
+        iniciar();
+
+        int passos = assertDoesNotThrow(this::jogarAteOFim);
+
+        assertEquals(3 * SimulacaoPoder.MAX_RODADAS, passos);
+        assertEquals(MENSAGEM_LIMITE, simulacao.getResultado());
+        assertTrue(azul.isAtivo() && verde.isAtivo() && rosa.isAtivo());
+    }
+
+    @Test
+    void limiteDeMilRodadasComFantasmaInalcancavel() throws Exception {
+        // O fantasma fica preso em (3,3) atrás de rochas; a fruta em (3,0) continua alcançável.
+        tabuleiro.adicionarObstaculo(new Rocha(), 2, 3);
+        tabuleiro.adicionarObstaculo(new Rocha(), 3, 2);
+        tabuleiro.setFantasmaInteligente(new FantasmaInteligente(3, 3));
+        iniciar();
+
+        int passos = assertDoesNotThrow(this::jogarAteOFim);
+
+        assertEquals(4 * SimulacaoPoder.MAX_RODADAS, passos);
+        assertEquals(MENSAGEM_LIMITE, simulacao.getResultado());
+        assertNotNull(tabuleiro.getFantasmaInteligente());
+        assertEquals(3, tabuleiro.getFantasmaInteligente().getX());
+        assertEquals(3, tabuleiro.getFantasmaInteligente().getY());
+    }
+
+    @Test
+    void semFantasmaARodadaFechaDepoisDoUltimoPacman() throws Exception {
+        iniciar();
+
+        List<Robo> atores = new ArrayList<>();
+        for (int i = 0; i < 3 * GeradorPoder.ESPERA_INICIAL - 1; i++) {
+            atores.add(simulacao.proximoPasso().robo());
+        }
+        assertEquals(0, contar(EventoPartida.Tipo.PODER_APARECEU));
+
+        atores.add(simulacao.proximoPasso().robo());
+
+        assertEquals(1, contar(EventoPartida.Tipo.PODER_APARECEU));
+        assertEquals(List.of(azul, verde, rosa), atores.subList(0, 3));
+        assertEquals(atores.subList(0, 3), atores.subList(atores.size() - 3, atores.size()));
+    }
+
+    @Test
+    void primeiroPacmanEliminadoAntesDoInicioEPulado() throws Exception {
+        azul.explodir();
+        iniciar();
+
+        List<Robo> atores = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            atores.add(simulacao.proximoPasso().robo());
+        }
+
+        assertEquals(List.of(verde, rosa, verde, rosa), atores);
+    }
+
+    @Test
+    void comerFantasmaEmCimaDaFrutaPublicaAchouAlimento() throws Exception {
+        tabuleiro = new Tabuleiro(1, 0);
+        tabuleiro.setFantasmaInteligente(new FantasmaInteligente(1, 1));
+        azul.darPoder();
+        azul.roteiro(PARADO, "right");
+        iniciar();
+
+        // Rodada 1: o fantasma desce e para em cima da fruta (1,0).
+        turnoDe(null);
+        assertEquals(1, tabuleiro.getFantasmaInteligente().getX());
+        assertEquals(0, tabuleiro.getFantasmaInteligente().getY());
+        assertTrue(azul.isComPoder());
+        eventos.clear();
+
+        // Rodada 2: o azul, com poder, entra na fruta onde está o fantasma.
+        Simulacao.Passo passo = simulacao.proximoPasso();
+
+        assertSame(azul, passo.robo());
+        assertEquals(List.of(EventoPartida.Tipo.COMEU_FANTASMA, EventoPartida.Tipo.ACHOU_ALIMENTO), tipos());
+        assertSame(azul, eventos.get(1).robo());
+        assertEquals(1, eventos.get(1).x());
+        assertEquals(0, eventos.get(1).y());
+        assertNull(tabuleiro.getFantasmaInteligente());
+        assertTrue(simulacao.isTerminada());
+        assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
     }
 }
