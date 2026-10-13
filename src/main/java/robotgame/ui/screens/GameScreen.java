@@ -1,5 +1,9 @@
 package robotgame.ui.screens;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -8,6 +12,7 @@ import javafx.animation.Timeline;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -18,7 +23,9 @@ import javafx.util.Duration;
 import robotgame.excecao.MovimentoInvalidoException;
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.ModoJogo;
+import robotgame.modelo.PartidaPvp;
 import robotgame.modelo.Robo;
+import robotgame.modelo.FantasmaAleatorio;
 import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.RoboInteligente;
 import robotgame.modelo.RoboSuperInteligente;
@@ -49,6 +56,22 @@ public class GameScreen implements Tela {
     private static final Duration INTERVALO_SIMULACAO = Duration.millis(700);
     private static final double[] INTERVALOS_MS = {1400, 1000, 700, 450, 250};
     private static final Duration LIMITE_MUSICA_INICIO = Duration.seconds(6);
+    // No PvP o tempo corre em rodadas de 1 s: o fantasma anda e o poder dos pacmans gasta um turno.
+    private static final Duration INTERVALO_PVP = Duration.seconds(1);
+    private static final String[] TECLAS_PVP = {"setas", "W A S D"};
+
+    private record ComandoPvp(int jogador, String direcao) {
+    }
+
+    private static final Map<KeyCode, ComandoPvp> COMANDOS_PVP = Map.of(
+            KeyCode.UP, new ComandoPvp(0, "up"),
+            KeyCode.DOWN, new ComandoPvp(0, "down"),
+            KeyCode.RIGHT, new ComandoPvp(0, "right"),
+            KeyCode.LEFT, new ComandoPvp(0, "left"),
+            KeyCode.W, new ComandoPvp(1, "up"),
+            KeyCode.S, new ComandoPvp(1, "down"),
+            KeyCode.D, new ComandoPvp(1, "right"),
+            KeyCode.A, new ComandoPvp(1, "left"));
 
     private final Navegador navegador;
     private final ConfiguracaoPartida config;
@@ -57,6 +80,8 @@ public class GameScreen implements Tela {
     private final Tabuleiro tabuleiro;
     private final Robo[] robos;
     private final DiarioPartida diario;
+    private final boolean pvp;
+    private final Set<KeyCode> teclasPressionadas = new HashSet<>();
 
     private final BoardView board = new BoardView(136, false);
     private final MessageBar mensagem = new MessageBar(592);
@@ -71,6 +96,8 @@ public class GameScreen implements Tela {
     private Simulacao simulacao;
     // Usada só no modo PACMAN_PODER, no lugar de simulacao.
     private SimulacaoPoder simulacaoPoder;
+    // Usada só no modo PVP.
+    private PartidaPvp partidaPvp;
     private Timeline animacaoBoca;
     private Timeline animacaoSimulacao;
     private FadeTransition animacaoStart;
@@ -91,21 +118,29 @@ public class GameScreen implements Tela {
         this.sons = navegador.getSons();
         this.tabuleiro = config.criarTabuleiro();
         this.robos = config.criarRobos();
-        this.diario = new DiarioPartida(robos, modo.isManual());
+        this.pvp = modo.isPvp();
+        this.diario = new DiarioPartida(robos, modo);
         for (Robo r : robos) {
             r.setOuvinteMovimentoInvalido(this::aoEvento);
         }
 
-        board.setFruta(tabuleiro.getXAlimento(), tabuleiro.getYAlimento(), Sprites.fruta(config.getIndiceFruta(), 80));
+        if (tabuleiro.temAlimento()) {
+            board.setFruta(tabuleiro.getXAlimento(), tabuleiro.getYAlimento(),
+                    Sprites.fruta(config.getIndiceFruta(), 80));
+        }
         board.carregarObstaculos(tabuleiro);
         board.setRobos(robos);
         FantasmaInteligente fantasma = tabuleiro.getFantasmaInteligente();
         if (fantasma != null) {
             board.setFantasmaInteligente(fantasma.getX(), fantasma.getY());
         }
+        FantasmaAleatorio fantasmaAleatorio = tabuleiro.getFantasmaAleatorio();
+        if (fantasmaAleatorio != null) {
+            board.setFantasmaAleatorio(fantasmaAleatorio.getX(), fantasmaAleatorio.getY());
+        }
         montarSobreposicoes();
 
-        controles = new ControlsPanel(!modo.isManual(), this::alternarPausa, this::alternarSom,
+        controles = new ControlsPanel(!modo.isManual() && !pvp, this::alternarPausa, this::alternarSom,
                 () -> navegador.irParaMenu(config));
         controles.aoMudarVelocidade((obs, antes, agora) -> mudarVelocidade(agora.intValue()));
 
@@ -116,6 +151,17 @@ public class GameScreen implements Tela {
             dpad = new DPad(this::mover);
             diaryList = new DiaryList(diario.getEntradas(), 3, e -> true);
             painel = LayoutJogo.painel(12, placares[0], comoMover(), cartaoDiario(), legenda(), controles);
+        } else if (pvp) {
+            placares = new ScoreCard[robos.length];
+            for (int i = 0; i < robos.length; i++) {
+                placares[i] = new ScoreCard(cor(robos[i]), "JOGADOR " + (i + 1), TECLAS_PVP[i], 156,
+                        "VÁLIDOS", "INVÁLIDOS");
+                placares[i].statusAbaixoDoNome();
+            }
+            dpad = null;
+            diaryList = new DiaryList(diario.getEntradas(), 6, e -> true);
+            painel = LayoutJogo.painel(12, Ui.linhaIgual(12, placares), comoMoverPvp(), cartaoDiario(), legenda(),
+                    controles);
         } else {
             placares = new ScoreCard[robos.length];
             for (int i = 0; i < robos.length; i++) {
@@ -183,7 +229,43 @@ public class GameScreen implements Tela {
         return cartao;
     }
 
+    private NeonCard comoMoverPvp() {
+        VBox linhas = new VBox(8,
+                linhaTeclas(0, new KeyCap("←", true), new KeyCap("↑", true), new KeyCap("↓", true),
+                        new KeyCap("→", true)),
+                linhaTeclas(1, new KeyCap("A", true), new KeyCap("W", true), new KeyCap("S", true),
+                        new KeyCap("D", true)));
+        Label aviso = Ui.label("Com a bolinha de poder, encoste no rival para eliminá-lo.", 14, "muted");
+        aviso.setWrapText(true);
+        NeonCard cartao = new NeonCard("COMO MOVER", linhas, aviso);
+        Ui.tamanhoFixo(cartao, LayoutJogo.LARGURA_PAINEL, 130);
+        cartao.setSpacing(8);
+        return cartao;
+    }
+
+    private HBox linhaTeclas(int jogador, KeyCap... teclas) {
+        Label nome = Ui.label("Jogador " + (jogador + 1), 14, "semi");
+        Ui.tamanhoFixo(nome, 96, 24);
+        HBox linha = Ui.linha(6, Sprites.pacman(cor(robos[jogador]), 22), nome);
+        linha.getChildren().addAll(teclas);
+        return linha;
+    }
+
+    private NeonCard legendaPvp() {
+        LegendGrid grade = new LegendGrid(2);
+        for (int i = 0; i < robos.length; i++) {
+            grade.item(Sprites.pacman(cor(robos[i]), 22), "Jogador " + (i + 1), TECLAS_PVP[i]);
+        }
+        grade.item(Sprites.fantasmaAleatorio(22), "Fantasma aleatório", "elimina sem poder");
+        // Mesma cor da bolinha desenhada no CellView.
+        grade.item(new Circle(7, Color.web("#ffb897")), "Bolinha de poder", "elimina o rival");
+        return new NeonCard("LEGENDA", grade);
+    }
+
     private NeonCard legenda() {
+        if (pvp) {
+            return legendaPvp();
+        }
         if (modo == ModoJogo.PACMAN_PODER) {
             return legendaPoder();
         }
@@ -239,12 +321,20 @@ public class GameScreen implements Tela {
         mostrarStart();
         iniciarAnimacaoBoca();
         sons.iniciarWakawaka();
-        diario.registrarInicio(tabuleiro.getXAlimento(), tabuleiro.getYAlimento());
+        if (pvp) {
+            diario.registrarInicioPvp();
+        } else {
+            diario.registrarInicio(tabuleiro.getXAlimento(), tabuleiro.getYAlimento());
+        }
         if (modo.isManual()) {
             mostrarDica();
         } else {
             iniciarSimulacao();
-            mostrarUltimo();
+            if (pvp) {
+                mensagem.mostrar("DICA", "Pegue a bolinha de poder e elimine o outro jogador!");
+            } else {
+                mostrarUltimo();
+            }
         }
         atualizarBotoes();
     }
@@ -270,6 +360,14 @@ public class GameScreen implements Tela {
     }
 
     private void iniciarSimulacao() {
+        if (pvp) {
+            partidaPvp = new PartidaPvp(tabuleiro, robos[0], robos[1]);
+            partidaPvp.setOuvinte(this::aoEvento);
+            animacaoSimulacao = new Timeline(new KeyFrame(INTERVALO_PVP, e -> executarRodadaPvp()));
+            animacaoSimulacao.setCycleCount(Timeline.INDEFINITE);
+            animacaoSimulacao.play();
+            return;
+        }
         if (modo == ModoJogo.PACMAN_PODER) {
             simulacaoPoder = new SimulacaoPoder(tabuleiro, robos);
             simulacaoPoder.setOuvinte(this::aoEvento);
@@ -300,6 +398,40 @@ public class GameScreen implements Tela {
 
         if (simulacao.isTerminada()) {
             finalizar(simulacao.getResultado());
+        }
+    }
+
+    private void executarRodadaPvp() {
+        int ativosAntes = ativos();
+        partidaPvp.passarRodada();
+        if (ativos() < ativosAntes) {
+            iniciarMorte();
+        }
+        atualizarPainel();
+        mostrarUltimo();
+        if (partidaPvp.isTerminada()) {
+            finalizar(partidaPvp.getResultado());
+        }
+    }
+
+    private void moverPvp(int jogador, String direcao) {
+        if (congelado || pausado || terminada || partidaPvp == null) {
+            return;
+        }
+        Robo robo = robos[jogador];
+        if (!robo.isAtivo()) {
+            return;
+        }
+        board.setDirecao(robo, direcao);
+        int ativosAntes = ativos();
+        partidaPvp.mover(robo, direcao);
+        if (ativos() < ativosAntes) {
+            iniciarMorte();
+        }
+        atualizarPainel();
+        mostrarUltimo();
+        if (partidaPvp.isTerminada()) {
+            finalizar(partidaPvp.getResultado());
         }
     }
 
@@ -431,7 +563,7 @@ public class GameScreen implements Tela {
                 board.removerFantasmaInteligente(true);
                 sons.tocarFruta();
             }
-            case ELIMINADO_PELO_FANTASMA -> board.explodir(e.robo(), deslize, null);
+            case ELIMINADO_PELO_FANTASMA, PACMAN_ELIMINADO -> board.explodir(e.robo(), deslize, null);
             case COMEU_FANTASMA_BURRO -> {
                 board.setDirecao(e.robo(), e.direcao());
                 board.carregarObstaculos(tabuleiro);
@@ -457,6 +589,16 @@ public class GameScreen implements Tela {
                         String.valueOf(r.getMovimentosInvalidos()));
                 boolean achou = tabuleiro.alimentoEncontradoPor(r);
                 placares[i].setStatus(achou ? "ACHOU" : "JOGANDO", Tema.VERDE);
+            } else if (pvp) {
+                placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
+                        String.valueOf(r.getMovimentosInvalidos()));
+                if (!r.isAtivo()) {
+                    placares[i].setStatus("ELIMINADO", Tema.VERMELHO);
+                } else if (r.isComPoder()) {
+                    placares[i].setStatus("PODER " + r.getTurnosDePoder(), Tema.AMARELO);
+                } else {
+                    placares[i].setStatus("ATIVO", Tema.VERDE);
+                }
             } else if (modo == ModoJogo.PACMAN_PODER) {
                 placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
                         String.valueOf(r.getMovimentosInvalidos()));
@@ -546,6 +688,10 @@ public class GameScreen implements Tela {
             default -> {
             }
         }
+        if (pvp) {
+            aoTeclaPvp(evento);
+            return;
+        }
         if (!modo.isManual()) {
             return;
         }
@@ -562,6 +708,24 @@ public class GameScreen implements Tela {
         }
     }
 
+    private void aoTeclaPvp(KeyEvent evento) {
+        ComandoPvp comando = COMANDOS_PVP.get(evento.getCode());
+        if (comando == null) {
+            return;
+        }
+        evento.consume();
+        // Só a primeira batida conta: o auto-repeat do teclado só repete a última tecla segurada,
+        // o que daria vantagem a quem segura a tecla.
+        if (teclasPressionadas.add(evento.getCode())) {
+            moverPvp(comando.jogador(), comando.direcao());
+        }
+    }
+
+    @Override
+    public void aoTeclaSolta(KeyEvent evento) {
+        teclasPressionadas.remove(evento.getCode());
+    }
+
     private void finalizar(String resultado) {
         terminada = true;
         pararAnimacoes();
@@ -572,6 +736,9 @@ public class GameScreen implements Tela {
             if (r.isAtivo() && tabuleiro.alimentoEncontradoPor(r)) {
                 board.setVencedor(r.getX(), r.getY());
             }
+        }
+        if (pvp && partidaPvp.getVencedor() != null) {
+            board.setVencedor(partidaPvp.getVencedor().getX(), partidaPvp.getVencedor().getY());
         }
         esperaFim = new PauseTransition(Duration.millis(board.temAnimacaoDeMorte() ? 2300 : 1300));
         esperaFim.setOnFinished(e -> {
@@ -584,6 +751,9 @@ public class GameScreen implements Tela {
     private String textoFim(String resultado) {
         if (modo.isManual()) {
             return "Você achou a fruta em " + robos[0].getTotalMovimentos() + " movimentos.";
+        }
+        if (pvp) {
+            return resultado;
         }
         if (modo == ModoJogo.PACMAN_PODER) {
             // Vários podem estar na fruta; o texto da SimulacaoPoder diz quem chegou primeiro.
@@ -626,6 +796,10 @@ public class GameScreen implements Tela {
         }
         if (simulacaoPoder != null) {
             simulacaoPoder.setOuvinte(e -> {
+            });
+        }
+        if (partidaPvp != null) {
+            partidaPvp.setOuvinte(e -> {
             });
         }
         if (indoParaFim) {

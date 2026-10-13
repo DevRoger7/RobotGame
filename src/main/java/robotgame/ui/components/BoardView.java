@@ -19,6 +19,7 @@ import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
@@ -373,8 +374,17 @@ public class BoardView extends StackPane {
     }
 
     public void setFantasmaInteligente(int x, int y) {
+        setFantasma(x, y, Sprites.fantasmaInteligente(celula * 0.57));
+    }
+
+    public void setFantasmaAleatorio(int x, int y) {
+        setFantasma(x, y, Sprites.fantasmaAleatorio(celula * 0.57));
+    }
+
+    // Os dois fantasmas móveis usam o mesmo nó; só um deles existe por partida.
+    private void setFantasma(int x, int y, Node sprite) {
         if (fantasmaInteligente == null) {
-            fantasmaInteligente = new StackPane(Sprites.fantasmaInteligente(celula * 0.57));
+            fantasmaInteligente = new StackPane(sprite);
             Ui.tamanhoFixo(fantasmaInteligente, celula, celula);
             // Fica embaixo dos pacmans: quem tem poder aparece "comendo" o fantasma.
             camadaPacman.getChildren().add(0, fantasmaInteligente);

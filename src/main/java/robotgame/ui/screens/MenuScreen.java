@@ -21,6 +21,7 @@ import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.components.ColorSwatchRow;
 import robotgame.ui.components.Icones;
+import robotgame.ui.components.KeyCap;
 import robotgame.ui.components.MiniBoardPicker;
 import robotgame.ui.components.ModeCard;
 import robotgame.ui.components.NeonCard;
@@ -42,7 +43,9 @@ public class MenuScreen implements Tela {
             {"OBSTÁCULOS", "Você espalha fantasmas e rochas. O fantasma elimina o robô; a rocha o faz voltar.",
                     "2 ROBÔS · COM OBSTÁCULOS"},
             {"PAC-MAN COM PODER", "Três pacmans contra um fantasma caçador. Com a bolinha de poder, eles comem fantasmas.",
-                    "3 ROBÔS · COM PODER"}
+                    "3 ROBÔS · COM PODER"},
+            {"PVP", "Setas contra W A S D, sem fruta. Quem pegar a bolinha de poder elimina o outro.",
+                    "2 JOGADORES · SEM FRUTA"}
     };
 
     private final Navegador navegador;
@@ -56,6 +59,10 @@ public class MenuScreen implements Tela {
     private final Label aba2 = Ui.label("PACMAN 2", "aba");
     private final Label aba3 = Ui.label("PACMAN 3", "aba");
     private final MiniBoardPicker mini;
+    private final Label tituloFruta = Ui.label("ONDE FICA A FRUTA?", "section-label");
+    private final HBox linhaFruta;
+    private final Label tituloPvp = Ui.label("COMO JOGAR O PVP", "section-label");
+    private final VBox ajudaPvp = new VBox(12);
     private final StatTile tileX = new StatTile("X (0–3)", "0", 26);
     private final StatTile tileY = new StatTile("Y (0–3)", "3", 26);
     private final Label erro = Ui.label("", "erro");
@@ -127,7 +134,7 @@ public class MenuScreen implements Tela {
         tileY.getValor().getStyleClass().add("amarelo");
         VBox ladoMini = new VBox(14, tiles, ajuda, erro);
         HBox.setHgrow(ladoMini, Priority.ALWAYS);
-        HBox linhaFruta = new HBox(18, mini, ladoMini);
+        linhaFruta = new HBox(18, mini, ladoMini);
 
         Button iniciar = Ui.primario("INICIAR", "btn-verde", 64);
         iniciar.setStyle("-fx-font-size: 14px;");
@@ -135,8 +142,14 @@ public class MenuScreen implements Tela {
         iniciar.setOnAction(e -> iniciar());
 
         NeonCard cartaoPartida = new NeonCard("2 · MONTE SUA PARTIDA",
-                cabecalhoCor, linhaCores, Ui.label("ONDE FICA A FRUTA?", "section-label"), linhaFruta,
+                cabecalhoCor, linhaCores, tituloFruta, linhaFruta, tituloPvp, ajudaPvp,
                 Ui.espaco(), iniciar);
+        for (var no : new javafx.scene.Node[]{tituloPvp, ajudaPvp}) {
+            no.managedProperty().bind(no.visibleProperty());
+        }
+        for (var no : new javafx.scene.Node[]{tituloFruta, linhaFruta}) {
+            no.managedProperty().bind(no.visibleProperty());
+        }
         cartaoPartida.setSpacing(12);
         VBox.setMargin(cabecalhoCor, new Insets(8, 0, 0, 0));
         VBox.setMargin(iniciar, new Insets(0, 0, 6, 0));
@@ -168,6 +181,11 @@ public class MenuScreen implements Tela {
         for (int i = 0; i < cartoesModo.size(); i++) {
             cartoesModo.get(i).setSelecionado(ModoJogo.values()[i] == modo);
         }
+        boolean pvp = modo.isPvp();
+        tituloFruta.setVisible(!pvp);
+        linhaFruta.setVisible(!pvp);
+        tituloPvp.setVisible(pvp);
+        ajudaPvp.setVisible(pvp);
         int quantidade = modo.getQuantidadeRobos();
         abas.setVisible(quantidade > 1);
         aba3.setVisible(quantidade == 3);
@@ -212,6 +230,9 @@ public class MenuScreen implements Tela {
 
     // Lança IllegalArgumentException com a mensagem para o jogador se a fruta não puder ficar em (x,y).
     private void validarFruta(int x, int y) {
+        if (config.getModo().isPvp()) {
+            return;
+        }
         new Tabuleiro(x, y);
         if (config.getModo() == ModoJogo.PACMAN_PODER
                 && x == FantasmaInteligente.X_INICIAL && y == FantasmaInteligente.Y_INICIAL) {
@@ -246,6 +267,33 @@ public class MenuScreen implements Tela {
         tileX.setValor(String.valueOf(config.getXFruta()));
         tileY.setValor(String.valueOf(config.getYFruta()));
         mini.mostrarPacmans(ativas);
+        atualizarAjudaPvp(ativas);
+    }
+
+    // Duas linhas, uma por jogador, com o pacman na cor escolhida e as teclas que ele usa.
+    private void atualizarAjudaPvp(String[] ativas) {
+        ajudaPvp.getChildren().clear();
+        if (!config.getModo().isPvp()) {
+            return;
+        }
+        ajudaPvp.getChildren().addAll(
+                linhaJogador(CoresPacman.pacman(ativas[0]), "Jogador 1",
+                        new KeyCap("←", true), new KeyCap("↑", true), new KeyCap("↓", true), new KeyCap("→", true)),
+                linhaJogador(CoresPacman.pacman(ativas[1]), "Jogador 2",
+                        new KeyCap("A", true), new KeyCap("W", true), new KeyCap("S", true), new KeyCap("D", true)));
+        Label regras = Ui.label("Não há fruta. A bolinha de poder aparece sozinha: quem pegar elimina o outro "
+                + "jogador ao encostar nele. O fantasma anda ao acaso e elimina quem estiver sem poder.",
+                13.5, "muted");
+        regras.setWrapText(true);
+        ajudaPvp.getChildren().add(regras);
+    }
+
+    private HBox linhaJogador(javafx.scene.paint.Color cor, String nome, KeyCap... teclas) {
+        Label rotulo = Ui.label(nome, 16, "bold");
+        Ui.tamanhoFixo(rotulo, 110, 28);
+        HBox linha = Ui.linha(8, Sprites.pacman(cor, 30), rotulo);
+        linha.getChildren().addAll(teclas);
+        return linha;
     }
 
     private void iniciar() {

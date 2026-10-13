@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
 import robotgame.ui.theme.Tema;
 
@@ -19,11 +20,11 @@ public class DiarioPartida {
 
     private final ObservableList<Entrada> entradas = FXCollections.observableArrayList();
     private final List<Robo> robos;
-    private final boolean manual;
+    private final ModoJogo modo;
 
-    public DiarioPartida(Robo[] robos, boolean manual) {
+    public DiarioPartida(Robo[] robos, ModoJogo modo) {
         this.robos = Arrays.asList(robos);
-        this.manual = manual;
+        this.modo = modo;
     }
 
     public ObservableList<Entrada> getEntradas() {
@@ -36,6 +37,10 @@ public class DiarioPartida {
 
     public void registrarInicio(int xFruta, int yFruta) {
         adicionar(Tema.TEXTO_SECUNDARIO, "Partida iniciada. Fruta em " + pos(xFruta, yFruta) + ".", null);
+    }
+
+    public void registrarInicioPvp() {
+        adicionar(Tema.TEXTO_SECUNDARIO, "Partida iniciada. Quem pegar a bolinha de poder elimina o outro.", null);
     }
 
     // Em PODER_APARECEU, PODER_SUMIU e FANTASMA_MOVEU o robo do evento é null.
@@ -56,11 +61,12 @@ public class DiarioPartida {
             case ACHOU_ALIMENTO -> quem + " chegou à fruta em " + pos(e.x(), e.y()) + ".";
             case PODER_APARECEU -> "Bolinha de poder apareceu em " + pos(e.x(), e.y()) + ".";
             case PODER_SUMIU -> "A bolinha de poder sumiu.";
-            case PEGOU_PODER -> "Pacman " + e.robo().getCor() + " pegou o poder!";
-            case PODER_ACABOU -> "O poder do pacman " + e.robo().getCor() + " acabou.";
-            case COMEU_FANTASMA -> "Pacman " + e.robo().getCor() + " comeu o fantasma!";
+            case PEGOU_PODER -> sujeito(e) + " pegou o poder!";
+            case PODER_ACABOU -> "O poder do " + sujeitoMinusculo(e) + " acabou.";
+            case COMEU_FANTASMA -> sujeito(e) + " comeu o fantasma!";
             case COMEU_FANTASMA_BURRO -> "Pacman " + e.robo().getCor() + " comeu um fantasma burro.";
-            case ELIMINADO_PELO_FANTASMA -> "O fantasma pegou o pacman " + e.robo().getCor() + ".";
+            case ELIMINADO_PELO_FANTASMA -> "O fantasma pegou o " + sujeitoMinusculo(e) + ".";
+            case PACMAN_ELIMINADO -> quem + " foi eliminado por " + nome(rival(e.robo())) + ".";
             case FANTASMA_MOVEU -> throw new IllegalStateException("FANTASMA_MOVEU não vai para o diário.");
         };
         Color cor = e.tipo() == EventoPartida.Tipo.FANTASMA_SUMIU && e.obstaculo() instanceof Fantasma f
@@ -70,7 +76,23 @@ public class DiarioPartida {
     }
 
     public String nome(Robo robo) {
-        return manual ? "Você" : "Pacman " + (robos.indexOf(robo) + 1);
+        if (modo == ModoJogo.MANUAL) {
+            return "Você";
+        }
+        return (modo.isPvp() ? "Jogador " : "Pacman ") + (robos.indexOf(robo) + 1);
+    }
+
+    // Nos modos com cores o diário cita o pacman pela cor; no PvP, pelo jogador.
+    private String sujeito(EventoPartida e) {
+        return modo.isPvp() ? nome(e.robo()) : "Pacman " + e.robo().getCor();
+    }
+
+    private String sujeitoMinusculo(EventoPartida e) {
+        return modo.isPvp() ? nome(e.robo()) : "pacman " + e.robo().getCor();
+    }
+
+    private Robo rival(Robo robo) {
+        return robos.get(0) == robo ? robos.get(1) : robos.get(0);
     }
 
     private void adicionar(Color cor, String texto, EventoPartida evento) {

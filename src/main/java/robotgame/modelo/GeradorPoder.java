@@ -77,6 +77,10 @@ public class GeradorPoder {
         if (fantasma != null && fantasma.getX() == x && fantasma.getY() == y) {
             return false;
         }
+        FantasmaAleatorio aleatorio = t.getFantasmaAleatorio();
+        if (aleatorio != null && aleatorio.getX() == x && aleatorio.getY() == y) {
+            return false;
+        }
         if (anterior != null && anterior.getX() == x && anterior.getY() == y) {
             return false;
         }

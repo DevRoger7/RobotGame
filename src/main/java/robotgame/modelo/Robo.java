@@ -19,11 +19,19 @@ public class Robo {
     private Poder poder;
 
     public Robo(String cor) {
+        this(cor, 0, 0);
+    }
+
+    // Posição inicial diferente de (0,0), usada no modo PvP.
+    public Robo(String cor, int x, int y) {
+        if (!Tabuleiro.dentroDosLimites(x, y)) {
+            throw new IllegalArgumentException("Posição inicial (" + x + "," + y + ") fora do tabuleiro.");
+        }
         this.cor = cor;
-        this.x = 0;
-        this.y = 0;
-        this.xAnterior = 0;
-        this.yAnterior = 0;
+        this.x = x;
+        this.y = y;
+        this.xAnterior = x;
+        this.yAnterior = y;
         this.ativo = true;
     }
 
@@ -57,6 +65,10 @@ public class Robo {
 
     public boolean isComPoder() {
         return poder != null;
+    }
+
+    public int getTurnosDePoder() {
+        return poder == null ? 0 : poder.getTurnosRestantes();
     }
 
     public void darPoder() {

@@ -17,6 +17,8 @@ public record EventoPartida(Tipo tipo, Robo robo, String direcao, int x, int y, 
         FANTASMA_MOVEU,
         COMEU_FANTASMA,
         COMEU_FANTASMA_BURRO,
-        ELIMINADO_PELO_FANTASMA
+        ELIMINADO_PELO_FANTASMA,
+        // Modo PvP: robo é a vítima, eliminada por encostar no outro jogador que estava com poder.
+        PACMAN_ELIMINADO
     }
 }

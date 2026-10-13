@@ -16,7 +16,10 @@ public enum ModoJogo {
             true, true),
     PACMAN_PODER("Pac-Man com poder (3 robôs)",
             "Três pacmans (normal, inteligente e super) contra um fantasma que caça do mais inteligente ao mais burro. Quem pegar a bolinha de poder pode comer fantasmas.",
-            true, true);
+            true, true),
+    PVP("PvP (2 jogadores)",
+            "Dois jogadores no mesmo teclado, sem fruta: um usa W A S D e o outro as setas. Quem pegar a bolinha de poder elimina o outro.",
+            false, false);
 
     private final String nome;
     private final String explicacao;
@@ -36,6 +39,10 @@ public enum ModoJogo {
 
     public boolean isManual() {
         return this == MANUAL;
+    }
+
+    public boolean isPvp() {
+        return this == PVP;
     }
 
     public int getQuantidadeRobos() {

@@ -47,7 +47,8 @@ public class ResultScreen implements Tela {
     private static final Set<EventoPartida.Tipo> RELEVANTES = EnumSet.of(EventoPartida.Tipo.ROCHA,
             EventoPartida.Tipo.EXPLODIU, EventoPartida.Tipo.FANTASMA_SUMIU, EventoPartida.Tipo.ACHOU_ALIMENTO,
             EventoPartida.Tipo.PEGOU_PODER, EventoPartida.Tipo.COMEU_FANTASMA,
-            EventoPartida.Tipo.COMEU_FANTASMA_BURRO, EventoPartida.Tipo.ELIMINADO_PELO_FANTASMA);
+            EventoPartida.Tipo.COMEU_FANTASMA_BURRO, EventoPartida.Tipo.ELIMINADO_PELO_FANTASMA,
+            EventoPartida.Tipo.PACMAN_ELIMINADO);
 
     private final Navegador navegador;
     private final ResultadoPartida resultado;
@@ -74,15 +75,17 @@ public class ResultScreen implements Tela {
 
         Tabuleiro tabuleiro = resultado.tabuleiro();
         BoardView board = new BoardView(136, false);
-        board.setFruta(tabuleiro.getXAlimento(), tabuleiro.getYAlimento(),
-                Sprites.fruta(resultado.configuracao().getIndiceFruta(), 80));
+        if (tabuleiro.temAlimento()) {
+            board.setFruta(tabuleiro.getXAlimento(), tabuleiro.getYAlimento(),
+                    Sprites.fruta(resultado.configuracao().getIndiceFruta(), 80));
+        }
         board.carregarObstaculos(tabuleiro);
         for (int codigo : resultado.explosoes()) {
             board.mostrarExplosao(codigo / Tabuleiro.TAMANHO, codigo % Tabuleiro.TAMANHO);
         }
         board.setRobos(robos);
         for (Robo r : robos) {
-            if (resultado.achou(r)) {
+            if (resultado.achou(r) || (modo.isPvp() && r == destaque)) {
                 board.setVencedor(r.getX(), r.getY());
             }
         }
@@ -109,9 +112,10 @@ public class ResultScreen implements Tela {
         Node[] placares = new Node[robos.length];
         for (int i = 0; i < robos.length; i++) {
             Robo r = robos[i];
-            String nome = modo.isManual() ? "PACMAN 1" : "PACMAN " + (i + 1);
-            String sub = modo.isManual() ? "você controlou" : tipo(r);
-            if (modo == ModoJogo.PACMAN_PODER) {
+            String nome = modo.isManual() ? "PACMAN 1" : (modo.isPvp() ? "JOGADOR " : "PACMAN ") + (i + 1);
+            String sub = modo.isManual() ? "você controlou"
+                    : modo.isPvp() ? (i == 0 ? "usou as setas" : "usou W A S D") : tipo(r);
+            if (modo == ModoJogo.PACMAN_PODER || modo.isPvp()) {
                 placares[i] = placarCompacto(r, nome, sub);
                 continue;
             }
@@ -220,6 +224,11 @@ public class ResultScreen implements Tela {
             return;
         }
 
+        if (modo.isPvp()) {
+            calcularTextosPvp(diario);
+            return;
+        }
+
         if (modo == ModoJogo.NORMAL_X_INTELIGENTE && resultado.achou(robos[0]) && resultado.achou(robos[1])) {
             int m1 = robos[0].getTotalMovimentos();
             int m2 = robos[1].getTotalMovimentos();
@@ -262,6 +271,29 @@ public class ResultScreen implements Tela {
         detalhe = todosExplodiram ? "Os dois pacmans explodiram nos fantasmas." : resultado.mensagem();
         faixa = "Ninguém achou a fruta";
         rodape = todosExplodiram ? "Os dois pacmans foram eliminados." : resultado.mensagem();
+    }
+
+    // Os textos vêm do resultado da PartidaPvp (resultado.mensagem()). Vence o único pacman vivo.
+    private void calcularTextosPvp(DiarioPartida diario) {
+        Robo vivo = null;
+        int vivos = 0;
+        for (Robo r : robos) {
+            if (r.isAtivo()) {
+                vivo = r;
+                vivos++;
+            }
+        }
+        destaque = vivos == 1 ? vivo : null;
+        if (destaque != null) {
+            String nome = diario.nome(destaque);
+            titulo = nome.toUpperCase() + " VENCEU!";
+            faixa = nome + " eliminou o rival!";
+        } else {
+            titulo = "EMPATE!";
+            faixa = vivos == 0 ? "Os dois foram eliminados" : "Tempo esgotado";
+        }
+        detalhe = resultado.mensagem();
+        rodape = resultado.mensagem();
     }
 
     // Os textos vêm do resultado da SimulacaoPoder (getResultado()), que chega em resultado.mensagem().
@@ -322,6 +354,9 @@ public class ResultScreen implements Tela {
     }
 
     private String situacao(Robo r) {
+        if (modo.isPvp()) {
+            return !r.isAtivo() ? "ELIMINADO" : r == destaque ? "VENCEU" : "EMPATE";
+        }
         if (modo == ModoJogo.PACMAN_PODER) {
             return !r.isAtivo() ? "ELIMINADO" : r == destaque ? "VENCEU" : resultado.achou(r) ? "ACHOU" : "VIVO";
         }
@@ -335,6 +370,9 @@ public class ResultScreen implements Tela {
     }
 
     private Color corSituacao(Robo r) {
+        if (modo.isPvp()) {
+            return !r.isAtivo() ? Tema.VERMELHO : r == destaque ? Tema.AMARELO : Tema.TEXTO_SECUNDARIO;
+        }
         if (modo == ModoJogo.PACMAN_PODER) {
             return !r.isAtivo() ? Tema.VERMELHO : r == destaque ? Tema.AMARELO
                     : resultado.achou(r) ? Tema.VERDE : Tema.TEXTO_SECUNDARIO;

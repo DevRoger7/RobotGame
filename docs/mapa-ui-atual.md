@@ -131,3 +131,19 @@ decisões tomadas durante a implementação (seção 9 do plano).
     "EMPATE!". O placar do mais rápido ganha o chip amarelo "VENCEU".
 19. **Transição para o fim**: a tela de jogo espera 1,3 s (2,3 s se houver animação de morte) antes de
     abrir a tela de fim, para o jogador ver o último lance; os sons de fruta/morte terminam naturalmente.
+
+## Modo 6 — PvP
+
+- `ModoJogo.PVP`: dois jogadores no mesmo teclado, sem fruta. Jogador 1 usa as setas, Jogador 2 usa W A S D
+  (`GameScreen.COMANDOS_PVP`). Só a primeira batida de cada tecla conta (`Tela.aoTeclaSolta`): o auto-repeat do
+  teclado só repete a última tecla segurada, o que daria vantagem a quem segura a tecla.
+- Regras em `modelo.PartidaPvp`: não há turnos, cada jogador anda quando quiser. A cada rodada (1 s, `GameScreen.INTERVALO_PVP`)
+  o `FantasmaAleatorio` anda para uma casa vizinha sorteada, o poder de quem o tem gasta um turno (`Poder.DURACAO`) e o
+  `GeradorPoder` faz a bolinha aparecer/sumir. Encostar no rival elimina quem está sem poder (se os dois têm poder, ou
+  nenhum, convivem). O fantasma elimina quem está sem poder; quem tem poder o come e perde o poder. Vence o último pacman
+  vivo; se os dois morrerem juntos, ou passarem `PartidaPvp.MAX_RODADAS` rodadas, é empate.
+- Sem fruta: `Tabuleiro.semAlimento()` (posição do alimento fora do tabuleiro, `temAlimento()` falso). `FantasmaMovel` é a base
+  de `FantasmaInteligente` e `FantasmaAleatorio`; o `Tabuleiro` guarda o aleatório em `getFantasmaAleatorio()`.
+- Novo evento `EventoPartida.Tipo.PACMAN_ELIMINADO` (robo = vítima). Diário e placares chamam os pacmans de "Jogador 1/2".
+- Menu: os 6 cartões de modo só cabem com `.mode-desc` em 13.5 px; no PvP o bloco "onde fica a fruta" dá lugar a "como jogar".
+- Posições iniciais no PvP: Jogador 1 em (3,3) (`Robo(cor, x, y)`), Jogador 2 em (0,0); o fantasma aleatório começa em (0,3).

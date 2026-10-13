@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.FantasmaAleatorio;
 import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
@@ -84,6 +85,11 @@ public class ConfiguracaoPartida {
     }
 
     public Tabuleiro criarTabuleiro() {
+        if (modo.isPvp()) {
+            Tabuleiro semFruta = Tabuleiro.semAlimento();
+            semFruta.setFantasmaAleatorio(new FantasmaAleatorio());
+            return semFruta;
+        }
         Tabuleiro tabuleiro = new Tabuleiro(xFruta, yFruta);
         if (modo.isComObstaculos()) {
             for (ObstaculoColocado o : obstaculos) {
@@ -98,6 +104,11 @@ public class ConfiguracaoPartida {
     }
 
     public Robo[] criarRobos() {
+        if (modo.isPvp()) {
+            // Jogador 1 nasce no canto superior direito, jogador 2 em (0,0).
+            int canto = Tabuleiro.TAMANHO - 1;
+            return new Robo[]{new Robo(cor1, canto, canto), new Robo(cor2)};
+        }
         if (modo.getQuantidadeRobos() == 1) {
             return new Robo[]{new Robo(cor1)};
         }

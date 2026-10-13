@@ -52,6 +52,11 @@ public final class Sprites {
         return sprite;
     }
 
+    // Fantasma do modo PvP: o ciano, sem contorno nem brilho, para não parecer o fantasma esperto.
+    public static ImageView fantasmaAleatorio(double tamanho) {
+        return view(fantasma("ciano", tamanho), tamanho);
+    }
+
     public static Image rocha(double tamanho) {
         return reduzida("pedra", tamanho, () -> Imagens.carregarRecortada("obstaculo_pedra.png"));
     }

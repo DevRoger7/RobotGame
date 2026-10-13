@@ -12,6 +12,21 @@ public class Tabuleiro {
     private final Obstaculo[][] obstaculos = new Obstaculo[TAMANHO][TAMANHO];
     private ItemPoder itemPoder;
     private FantasmaInteligente fantasmaInteligente;
+    private FantasmaAleatorio fantasmaAleatorio;
+
+    // Tabuleiro sem fruta (modo PvP): a posição do alimento fica fora do tabuleiro e nunca é encontrada.
+    private Tabuleiro() {
+        this.xAlimento = -1;
+        this.yAlimento = -1;
+    }
+
+    public static Tabuleiro semAlimento() {
+        return new Tabuleiro();
+    }
+
+    public boolean temAlimento() {
+        return xAlimento >= 0;
+    }
 
     public Tabuleiro(int xAlimento, int yAlimento) {
         if (!dentroDosLimites(xAlimento, yAlimento)) {
@@ -136,5 +151,28 @@ public class Tabuleiro {
 
     public void removerFantasmaInteligente() {
         fantasmaInteligente = null;
+    }
+
+    public FantasmaAleatorio getFantasmaAleatorio() {
+        return fantasmaAleatorio;
+    }
+
+    public void setFantasmaAleatorio(FantasmaAleatorio f) {
+        int x = f.getX();
+        int y = f.getY();
+        if (!dentroDosLimites(x, y)) {
+            throw new IllegalArgumentException("Posição (" + x + "," + y + ") fora do tabuleiro (use 0 a " + (TAMANHO - 1) + ").");
+        }
+        if (obstaculos[x][y] != null) {
+            throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada por um obstáculo.");
+        }
+        if (x == xAlimento && y == yAlimento) {
+            throw new IllegalArgumentException("Não é possível colocar o fantasma aleatório na posição do alimento.");
+        }
+        this.fantasmaAleatorio = f;
+    }
+
+    public void removerFantasmaAleatorio() {
+        fantasmaAleatorio = null;
     }
 }
