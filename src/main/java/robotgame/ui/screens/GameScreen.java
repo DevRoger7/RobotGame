@@ -1,5 +1,9 @@
 package robotgame.ui.screens;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -8,6 +12,7 @@ import javafx.animation.Timeline;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -44,6 +49,20 @@ public class GameScreen implements Tela {
     private static final Duration INTERVALO_SIMULACAO = Duration.millis(700);
     private static final double[] INTERVALOS_MS = {1400, 1000, 700, 450, 250};
     private static final Duration LIMITE_MUSICA_INICIO = Duration.seconds(6);
+    private static final String[] TECLAS_PVP = {"setas", "W A S D"};
+
+    private record Comando(int jogador, String direcao) {
+    }
+
+    private static final Map<KeyCode, Comando> COMANDOS_PVP = Map.of(
+            KeyCode.UP, new Comando(0, "up"),
+            KeyCode.DOWN, new Comando(0, "down"),
+            KeyCode.RIGHT, new Comando(0, "right"),
+            KeyCode.LEFT, new Comando(0, "left"),
+            KeyCode.W, new Comando(1, "up"),
+            KeyCode.S, new Comando(1, "down"),
+            KeyCode.D, new Comando(1, "right"),
+            KeyCode.A, new Comando(1, "left"));
 
     private final Navegador navegador;
     private final ConfiguracaoPartida config;
@@ -52,6 +71,8 @@ public class GameScreen implements Tela {
     private final Tabuleiro tabuleiro;
     private final Robo[] robos;
     private final DiarioPartida diario;
+    private final boolean solo;
+    private final Set<KeyCode> teclasPressionadas = new HashSet<>();
 
     private final BoardView board = new BoardView(136, false);
     private final MessageBar mensagem = new MessageBar(592);
@@ -84,7 +105,8 @@ public class GameScreen implements Tela {
         this.sons = navegador.getSons();
         this.tabuleiro = config.criarTabuleiro();
         this.robos = config.criarRobos();
-        this.diario = new DiarioPartida(robos, modo.isManual());
+        this.solo = modo == ModoJogo.MANUAL;
+        this.diario = new DiarioPartida(robos, modo);
         for (Robo r : robos) {
             r.setOuvinteMovimentoInvalido(this::aoEvento);
         }
@@ -99,21 +121,24 @@ public class GameScreen implements Tela {
         controles.aoMudarVelocidade((obs, antes, agora) -> mudarVelocidade(agora.intValue()));
 
         VBox painel;
-        if (modo.isManual()) {
+        if (solo) {
             placares = new ScoreCard[]{new ScoreCard(cor(robos[0]), "PACMAN 1", "você controla", 124,
                     "POSIÇÃO", "MOVIMENTOS", "INVÁLIDOS")};
-            dpad = new DPad(this::mover);
+            dpad = new DPad(direcao -> mover(robos[0], direcao));
             diaryList = new DiaryList(diario.getEntradas(), 3, e -> true);
             painel = LayoutJogo.painel(12, placares[0], comoMover(), cartaoDiario(), legenda(), controles);
         } else {
             placares = new ScoreCard[robos.length];
             for (int i = 0; i < robos.length; i++) {
-                placares[i] = new ScoreCard(cor(robos[i]), "PACMAN " + (i + 1), tipo(robos[i]), 132,
+                placares[i] = new ScoreCard(cor(robos[i]), nomeJogador(i).toUpperCase(), detalheJogador(i), 132,
                         "POSIÇÃO", "VÁLIDOS", "INVÁLIDOS");
             }
             dpad = null;
             diaryList = new DiaryList(diario.getEntradas(), 6, e -> true);
-            painel = LayoutJogo.painel(12, Ui.linhaIgual(12, placares), cartaoDiario(), legenda(), controles);
+            painel = modo.isPvp()
+                    ? LayoutJogo.painel(12, Ui.linhaIgual(12, placares), comoMoverPvp(), cartaoDiario(), legenda(),
+                            controles)
+                    : LayoutJogo.painel(12, Ui.linhaIgual(12, placares), cartaoDiario(), legenda(), controles);
         }
         raiz = LayoutJogo.montar(modo, StepperBar.Passo.JOGO, board, mensagem, painel);
         atualizarPainel();
@@ -165,14 +190,36 @@ public class GameScreen implements Tela {
         return cartao;
     }
 
+    private NeonCard comoMoverPvp() {
+        VBox linhas = new VBox(8,
+                linhaTeclas(0, new KeyCap("←", true), new KeyCap("↑", true), new KeyCap("↓", true),
+                        new KeyCap("→", true)),
+                linhaTeclas(1, new KeyCap("A", true), new KeyCap("W", true), new KeyCap("S", true),
+                        new KeyCap("D", true)));
+        Label aviso = Ui.label("Primeiro a chegar na fruta vence. Sair do tabuleiro é inválido.", 14, "muted");
+        aviso.setWrapText(true);
+        NeonCard cartao = new NeonCard("COMO MOVER", linhas, aviso);
+        Ui.tamanhoFixo(cartao, LayoutJogo.LARGURA_PAINEL, 130);
+        cartao.setSpacing(8);
+        return cartao;
+    }
+
+    private HBox linhaTeclas(int jogador, KeyCap... teclas) {
+        Label nome = Ui.label(nomeJogador(jogador), 14, "semi");
+        Ui.tamanhoFixo(nome, 96, 24);
+        HBox linha = Ui.linha(6, Sprites.pacman(cor(robos[jogador]), 22), nome);
+        linha.getChildren().addAll(teclas);
+        return linha;
+    }
+
     private NeonCard legenda() {
-        int itens = (modo.isManual() ? 1 : robos.length) + 2 + (modo.isComObstaculos() ? 2 : 0);
+        int itens = (solo ? 1 : robos.length) + 2 + (modo.isComObstaculos() ? 2 : 0);
         LegendGrid grade = new LegendGrid(LegendGrid.colunasPara(itens));
-        if (modo.isManual()) {
+        if (solo) {
             grade.item(Sprites.pacman(cor(robos[0]), 22), "Pacman 1", "você");
         } else {
             for (int i = 0; i < robos.length; i++) {
-                grade.item(Sprites.pacman(cor(robos[i]), 22), "Pacman " + (i + 1), tipo(robos[i]));
+                grade.item(Sprites.pacman(cor(robos[i]), 22), nomeJogador(i), detalheJogador(i));
             }
         }
         grade.item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "objetivo");
@@ -287,12 +334,13 @@ public class GameScreen implements Tela {
         }
     }
 
-    private void mover(String direcao) {
+    private void mover(Robo robo, String direcao) {
         if (congelado || pausado || terminada) {
             return;
         }
-        Robo robo = robos[0];
-        dpad.destacar(direcao);
+        if (dpad != null) {
+            dpad.destacar(direcao);
+        }
         board.setDirecao(robo, direcao);
         try {
             robo.mover(direcao);
@@ -306,11 +354,20 @@ public class GameScreen implements Tela {
 
         if (tabuleiro.alimentoEncontradoPor(robo)) {
             sons.tocarFruta();
-            finalizar("pacman " + robo.getCor() + " encontrou o alimento!");
+            finalizar(modo.isPvp() ? diario.nome(robo) + " encontrou o alimento e venceu!"
+                    : "pacman " + robo.getCor() + " encontrou o alimento!");
         }
     }
 
     private void mostrarDica() {
+        if (modo.isPvp()) {
+            if (diario.ultima() != null && diario.ultima().evento() != null) {
+                mostrarUltimo();
+            } else {
+                mensagem.mostrar("DICA", "Corram até a fruta! Quem chegar primeiro vence.");
+            }
+            return;
+        }
         Robo r = robos[0];
         int dx = tabuleiro.getXAlimento() - r.getX();
         int dy = tabuleiro.getYAlimento() - r.getY();
@@ -357,7 +414,7 @@ public class GameScreen implements Tela {
         for (int i = 0; i < placares.length; i++) {
             Robo r = robos[i];
             String posicao = "(" + r.getX() + "," + r.getY() + ")";
-            if (modo.isManual()) {
+            if (solo) {
                 placares[i].setValores(posicao, String.valueOf(r.getMovimentosValidos()),
                         String.valueOf(r.getMovimentosInvalidos()));
                 boolean achou = tabuleiro.alimentoEncontradoPor(r);
@@ -444,6 +501,10 @@ public class GameScreen implements Tela {
         if (!modo.isManual()) {
             return;
         }
+        if (modo.isPvp()) {
+            aoTeclaPvp(evento);
+            return;
+        }
         String direcao = switch (evento.getCode()) {
             case UP -> "up";
             case DOWN -> "down";
@@ -453,8 +514,26 @@ public class GameScreen implements Tela {
         };
         if (direcao != null) {
             evento.consume();
-            mover(direcao);
+            mover(robos[0], direcao);
         }
+    }
+
+    private void aoTeclaPvp(KeyEvent evento) {
+        Comando comando = COMANDOS_PVP.get(evento.getCode());
+        if (comando == null) {
+            return;
+        }
+        evento.consume();
+        // Só a primeira batida conta: o auto-repeat do teclado só repete a última tecla segurada,
+        // o que daria vantagem a quem segura a tecla.
+        if (teclasPressionadas.add(evento.getCode())) {
+            mover(robos[comando.jogador()], comando.direcao());
+        }
+    }
+
+    @Override
+    public void aoTeclaSolta(KeyEvent evento) {
+        teclasPressionadas.remove(evento.getCode());
     }
 
     private void finalizar(String resultado) {
@@ -477,7 +556,7 @@ public class GameScreen implements Tela {
     }
 
     private String textoFim(String resultado) {
-        if (modo.isManual()) {
+        if (solo) {
             return "Você achou a fruta em " + robos[0].getTotalMovimentos() + " movimentos.";
         }
         for (Robo r : robos) {
@@ -525,6 +604,14 @@ public class GameScreen implements Tela {
 
     private static javafx.scene.paint.Color cor(Robo r) {
         return CoresPacman.pacman(r.getCor());
+    }
+
+    private String nomeJogador(int indice) {
+        return (modo.isPvp() ? "Jogador " : "Pacman ") + (indice + 1);
+    }
+
+    private String detalheJogador(int indice) {
+        return modo.isPvp() ? TECLAS_PVP[indice] : tipo(robos[indice]);
     }
 
     private static String tipo(Robo r) {

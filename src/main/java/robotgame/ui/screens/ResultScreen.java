@@ -103,8 +103,10 @@ public class ResultScreen implements Tela {
         ScoreCard[] placares = new ScoreCard[robos.length];
         for (int i = 0; i < robos.length; i++) {
             Robo r = robos[i];
-            String nome = modo.isManual() ? "PACMAN 1" : "PACMAN " + (i + 1);
-            String sub = modo.isManual() ? "você controlou" : r instanceof RoboInteligente ? "inteligente" : "normal";
+            String nome = (modo.isPvp() ? "JOGADOR " : "PACMAN ") + (i + 1);
+            String sub = modo.isPvp() ? (i == 0 ? "usou as setas" : "usou W A S D")
+                    : modo == ModoJogo.MANUAL ? "você controlou"
+                    : r instanceof RoboInteligente ? "inteligente" : "normal";
             placares[i] = new ScoreCard(CoresPacman.pacman(r.getCor()), nome, sub, 140, "VÁLIDOS", "INVÁLIDOS", "TOTAL");
             placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
                     String.valueOf(r.getMovimentosInvalidos()), String.valueOf(r.getTotalMovimentos()));
@@ -194,7 +196,7 @@ public class ResultScreen implements Tela {
         DiarioPartida diario = resultado.diario();
         String fruta = DiarioPartida.pos(t.getXAlimento(), t.getYAlimento());
 
-        if (modo.isManual()) {
+        if (modo == ModoJogo.MANUAL) {
             Robo r = robos[0];
             destaque = r;
             titulo = "VOCÊ ACHOU A FRUTA!";
@@ -225,6 +227,23 @@ public class ResultScreen implements Tela {
             return;
         }
 
+        if (modo.isPvp()) {
+            for (int i = 0; i < robos.length; i++) {
+                Robo r = robos[i];
+                if (resultado.achou(r)) {
+                    Robo outro = robos[1 - i];
+                    destaque = r;
+                    String nome = diario.nome(r);
+                    titulo = nome.toUpperCase() + " VENCEU!";
+                    detalhe = "Chegou à fruta em " + fruta + " com " + r.getTotalMovimentos() + " movimentos; "
+                            + diario.nome(outro) + " parou em " + DiarioPartida.pos(outro.getX(), outro.getY()) + ".";
+                    faixa = nome + " venceu!";
+                    rodape = nome + " achou a fruta primeiro, em " + r.getTotalMovimentos() + " movimentos.";
+                    return;
+                }
+            }
+        }
+
         for (Robo r : robos) {
             if (resultado.achou(r)) {
                 destaque = r;
@@ -253,9 +272,9 @@ public class ResultScreen implements Tela {
             return "EXPLODIU";
         }
         if (resultado.achou(r)) {
-            return r == destaque && modo == ModoJogo.NORMAL_X_INTELIGENTE ? "VENCEU" : "ACHOU";
+            return r == destaque && (modo == ModoJogo.NORMAL_X_INTELIGENTE || modo.isPvp()) ? "VENCEU" : "ACHOU";
         }
-        return "NÃO ACHOU";
+        return modo.isPvp() ? "PERDEU" : "NÃO ACHOU";
     }
 
     private Color corSituacao(Robo r) {
@@ -263,7 +282,8 @@ public class ResultScreen implements Tela {
             return Tema.VERMELHO;
         }
         if (resultado.achou(r)) {
-            return r == destaque && modo == ModoJogo.NORMAL_X_INTELIGENTE ? Tema.AMARELO : Tema.VERDE;
+            return r == destaque && (modo == ModoJogo.NORMAL_X_INTELIGENTE || modo.isPvp())
+                    ? Tema.AMARELO : Tema.VERDE;
         }
         return Tema.TEXTO_SECUNDARIO;
     }

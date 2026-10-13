@@ -13,6 +13,9 @@ public interface Tela {
     default void aoTecla(KeyEvent evento) {
     }
 
+    default void aoTeclaSolta(KeyEvent evento) {
+    }
+
     default void aoSair() {
     }
 }

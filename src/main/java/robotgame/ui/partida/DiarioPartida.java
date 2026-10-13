@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
 import robotgame.ui.theme.Tema;
 
@@ -19,11 +20,11 @@ public class DiarioPartida {
 
     private final ObservableList<Entrada> entradas = FXCollections.observableArrayList();
     private final List<Robo> robos;
-    private final boolean manual;
+    private final ModoJogo modo;
 
-    public DiarioPartida(Robo[] robos, boolean manual) {
+    public DiarioPartida(Robo[] robos, ModoJogo modo) {
         this.robos = Arrays.asList(robos);
-        this.manual = manual;
+        this.modo = modo;
     }
 
     public ObservableList<Entrada> getEntradas() {
@@ -57,7 +58,10 @@ public class DiarioPartida {
     }
 
     public String nome(Robo robo) {
-        return manual ? "Você" : "Pacman " + (robos.indexOf(robo) + 1);
+        if (modo == ModoJogo.MANUAL) {
+            return "Você";
+        }
+        return (modo.isPvp() ? "Jogador " : "Pacman ") + (robos.indexOf(robo) + 1);
     }
 
     private void adicionar(Color cor, String texto, EventoPartida evento) {

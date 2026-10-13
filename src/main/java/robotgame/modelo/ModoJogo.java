@@ -13,7 +13,10 @@ public enum ModoJogo {
             true, false),
     COM_OBSTACULOS("Normal x inteligente com obstáculos",
             "Você posiciona fantasmas e rochas no tabuleiro. Fantasma pega o pacman; rocha o faz voltar.",
-            true, true);
+            true, true),
+    MANUAL_PVP("Manual PvP (2 jogadores)",
+            "Dois jogadores no mesmo teclado: um usa as setas e o outro W A S D. Vence quem achar o alimento primeiro.",
+            false, false);
 
     private final String nome;
     private final String explicacao;
@@ -32,11 +35,15 @@ public enum ModoJogo {
     }
 
     public boolean isManual() {
-        return this == MANUAL;
+        return this == MANUAL || this == MANUAL_PVP;
+    }
+
+    public boolean isPvp() {
+        return this == MANUAL_PVP;
     }
 
     public int getQuantidadeRobos() {
-        return isManual() ? 1 : 2;
+        return this == MANUAL ? 1 : 2;
     }
 
     public boolean isComRoboInteligente() {

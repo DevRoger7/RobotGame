@@ -131,3 +131,14 @@ decisões tomadas durante a implementação (seção 9 do plano).
     "EMPATE!". O placar do mais rápido ganha o chip amarelo "VENCEU".
 19. **Transição para o fim**: a tela de jogo espera 1,3 s (2,3 s se houver animação de morte) antes de
     abrir a tela de fim, para o jogador ver o último lance; os sons de fruta/morte terminam naturalmente.
+
+## Modo 5 — Manual PvP
+
+- `ModoJogo.MANUAL_PVP`: dois pacmans (`Robo`) no mesmo tabuleiro, controlados ao mesmo tempo no mesmo teclado.
+  Jogador 1 usa as setas, Jogador 2 usa W A S D (`GameScreen.COMANDOS_PVP`). Não há turnos nem simulação
+  (`Simulacao` recusa modos manuais); `ModoJogo.isManual()` vale para os dois modos manuais e `isPvp()` os distingue.
+- Vence quem pisar primeiro na fruta; a partida termina na hora. Os dois podem dividir a mesma casa.
+- Só a primeira batida de cada tecla conta (`Tela.aoTeclaSolta` + `teclasPressionadas`): o auto-repeat do teclado
+  só repete a última tecla segurada, o que daria vantagem a quem segura a tecla.
+- Nomes no diário e nos placares: "Jogador 1/2" (`DiarioPartida` recebe o `ModoJogo`). Fim: "JOGADOR N VENCEU!",
+  o outro placar mostra "PERDEU". Rótulo no cabeçalho: "MODO 5 · MANUAL PVP".

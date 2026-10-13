@@ -38,7 +38,9 @@ public class MenuScreen implements Tela {
                     "Um robô comum e um esperto, que evita repetir o erro. Termina quando os dois acham a fruta.",
                     "2 ROBÔS · AUTOMÁTICO"},
             {"OBSTÁCULOS", "Você espalha fantasmas e rochas. O fantasma elimina o robô; a rocha o faz voltar.",
-                    "2 ROBÔS · COM OBSTÁCULOS"}
+                    "2 ROBÔS · COM OBSTÁCULOS"},
+            {"MANUAL PVP", "Setas contra W A S D no mesmo teclado. Vence quem achar a fruta primeiro.",
+                    "2 JOGADORES · MANUAL"}
     };
 
     private final Navegador navegador;

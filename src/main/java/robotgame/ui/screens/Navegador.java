@@ -57,6 +57,11 @@ public class Navegador {
                 atual.aoTecla(e);
             }
         });
+        cena.addEventFilter(KeyEvent.KEY_RELEASED, e -> {
+            if (atual != null) {
+                atual.aoTeclaSolta(e);
+            }
+        });
 
         palco.setTitle("PacMan Game");
         palco.setScene(cena);
