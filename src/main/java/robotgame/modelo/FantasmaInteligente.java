@@ -27,11 +27,46 @@ public class FantasmaInteligente {
 
     // Retorna null quando o fantasma fica parado.
     public String decidirDirecao(Tabuleiro t, Robo[] robos) {
-        throw new UnsupportedOperationException("TODO");
+        Robo alvo = escolherAlvo(t, robos);
+        if (alvo == null) {
+            return null;
+        }
+        return BuscaCaminho.proximaDirecao(t, x, y, alvo.getX(), alvo.getY(), false);
     }
 
     // null não move.
     public void mover(String direcao) {
-        throw new UnsupportedOperationException("TODO");
+        if (direcao == null) {
+            return;
+        }
+        switch (direcao) {
+            case "up" -> y++;
+            case "down" -> y--;
+            case "right" -> x++;
+            case "left" -> x--;
+        }
+    }
+
+    // Ordem de inteligência: super, inteligente, normal. O primeiro ativo e alcançável é o alvo.
+    private Robo escolherAlvo(Tabuleiro t, Robo[] robos) {
+        for (int nivel = 0; nivel < 3; nivel++) {
+            for (Robo robo : robos) {
+                if (nivelDe(robo) == nivel && robo.isAtivo()
+                        && BuscaCaminho.distancia(t, x, y, robo.getX(), robo.getY(), false) != -1) {
+                    return robo;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static int nivelDe(Robo robo) {
+        if (robo instanceof RoboSuperInteligente) {
+            return 0;
+        }
+        if (robo instanceof RoboInteligente) {
+            return 1;
+        }
+        return 2;
     }
 }
