@@ -6,7 +6,9 @@ import java.util.function.Supplier;
 
 import javafx.scene.effect.Blend;
 import javafx.scene.effect.BlendMode;
+import javafx.scene.effect.BlurType;
 import javafx.scene.effect.ColorInput;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
@@ -16,6 +18,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Screen;
 
 import robotgame.ui.Imagens;
+import robotgame.ui.theme.Tema;
 
 public final class Sprites {
 
@@ -37,6 +40,16 @@ public final class Sprites {
 
     public static Image fantasma(String cor, double tamanho) {
         return reduzida("fantasma_" + cor, tamanho, () -> Imagens.carregarSemFundo("fantasma_" + cor + ".png"));
+    }
+
+    // Mesma imagem do fantasma vermelho, com contorno branco e brilho para não confundir com os fantasmas burros.
+    public static ImageView fantasmaInteligente(double tamanho) {
+        ImageView sprite = view(fantasma("vermelho", tamanho), tamanho);
+        DropShadow contorno = new DropShadow(BlurType.GAUSSIAN, Color.WHITE, Math.max(2, tamanho * 0.05), 0.9, 0, 0);
+        DropShadow brilho = new DropShadow(BlurType.GAUSSIAN, Tema.VERMELHO, tamanho * 0.3, 0.35, 0, 0);
+        brilho.setInput(contorno);
+        sprite.setEffect(brilho);
+        return sprite;
     }
 
     public static Image rocha(double tamanho) {

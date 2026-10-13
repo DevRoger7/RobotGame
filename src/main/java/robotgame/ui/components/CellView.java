@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
@@ -23,11 +24,15 @@ import robotgame.ui.theme.Tema;
 
 public class CellView extends StackPane {
 
+    // Cor da bolinha de poder (pêssego, como no Pac-Man clássico).
+    private static final Color PESSEGO = Color.web("#ffb897");
+
     private final int x;
     private final int y;
     private final double tamanho;
     private final Region fundo = new Region();
     private final Circle bolinha;
+    private final Circle bolinhaPoder;
     private final StackPane conteudo = new StackPane();
     private final StackPane previa = new StackPane();
 
@@ -36,6 +41,7 @@ public class CellView extends StackPane {
     private boolean explosao;
     private Color corPacman;
     private boolean vencedor;
+    private boolean itemPoder;
 
     public CellView(int x, int y, double tamanho, boolean mostrarCoordenada) {
         this.x = x;
@@ -45,6 +51,8 @@ public class CellView extends StackPane {
 
         bolinha = new Circle(tamanho >= 100 ? 5 : 3.5, Tema.BOLINHA);
         bolinha.setOpacity(0.6);
+        bolinhaPoder = new Circle(tamanho * 0.14, PESSEGO);
+        bolinhaPoder.setEffect(new DropShadow(tamanho * 0.18, PESSEGO));
         previa.setMouseTransparent(true);
         previa.setOpacity(0.55);
         getChildren().addAll(fundo, bolinha, conteudo, previa);
@@ -103,6 +111,16 @@ public class CellView extends StackPane {
         atualizar();
     }
 
+    public void setItemPoder(boolean itemPoder) {
+        this.itemPoder = itemPoder;
+        atualizar();
+    }
+
+    // O BoardView anima o piscar neste nó, para a animação pausar junto com o resto.
+    Circle getBolinhaPoder() {
+        return bolinhaPoder;
+    }
+
     public void setPrevia(Image imagem) {
         previa.getChildren().clear();
         if (imagem != null) {
@@ -145,6 +163,8 @@ public class CellView extends StackPane {
             conteudo.getChildren().add(Sprites.view(Sprites.fantasma(f.getCor(), tamanho * 0.57), tamanho * 0.57));
         } else if (obstaculo != null) {
             conteudo.getChildren().add(Sprites.view(Sprites.rocha(tamanho * 0.57), tamanho * 0.57));
+        } else if (itemPoder) {
+            conteudo.getChildren().add(bolinhaPoder);
         } else if (fruta != null && !ocupada) {
             ImageView v = Sprites.view(fruta, tamanho * 0.59);
             conteudo.getChildren().add(v);

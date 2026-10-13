@@ -20,6 +20,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -30,6 +31,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -57,6 +59,10 @@ public class BoardView extends StackPane {
     private boolean pausado;
     private BiConsumer<Integer, Integer> aoClicar;
     private BiFunction<Integer, Integer, Image> previa;
+    private StackPane fantasmaInteligente;
+    private TranslateTransition passoFantasma;
+    private CellView casaPoder;
+    private Animation piscarPoder;
 
     public BoardView(double celula, boolean compacto) {
         this.celula = celula;
@@ -202,6 +208,9 @@ public class BoardView extends StackPane {
     public void setRobos(Robo[] robos) {
         this.robos = robos;
         camadaPacman.getChildren().clear();
+        if (fantasmaInteligente != null) {
+            camadaPacman.getChildren().add(fantasmaInteligente);
+        }
         pacmans.clear();
         for (int i = 0; i < robos.length; i++) {
             PacmanNode no = new PacmanNode(robos[i], i + 1);
@@ -251,13 +260,23 @@ public class BoardView extends StackPane {
             for (int i = 0; i < grupo.size(); i++) {
                 Robo r = grupo.get(i);
                 PacmanNode no = pacmans.get(r);
-                double deslocamento = grupo.size() == 1 ? 0 : (i == 0 ? -0.25 : 0.25) * celula;
-                no.encolher(grupo.size() > 1);
-                no.mover(r.getX() * celula + deslocamento, (N - 1 - r.getY()) * celula, duracao);
+                double dx = 0;
+                double dy = 0;
+                if (grupo.size() == 2) {
+                    dx = (i == 0 ? -0.25 : 0.25) * celula;
+                } else if (grupo.size() >= 3) {
+                    // Três na mesma casa: dois embaixo e um em cima, para nenhum sumir atrás do outro.
+                    double[][] posicoes = {{-0.22, 0.1}, {0.22, 0.1}, {0, -0.18}};
+                    dx = posicoes[i % 3][0] * celula;
+                    dy = posicoes[i % 3][1] * celula;
+                }
+                no.encolher(grupo.size());
+                no.mover(r.getX() * celula + dx, (N - 1 - r.getY()) * celula + dy, duracao);
             }
         }
         for (PacmanNode no : pacmans.values()) {
             no.setVisible(visivel(no.robo));
+            no.setPoder(no.robo.isAtivo() && no.robo.isComPoder());
         }
     }
 
@@ -327,6 +346,93 @@ public class BoardView extends StackPane {
         tocar(morte);
     }
 
+    public void setItemPoder(int x, int y) {
+        removerItemPoder();
+        casaPoder = casas[x][y];
+        casaPoder.setItemPoder(true);
+        FadeTransition piscar = new FadeTransition(Duration.millis(450), casaPoder.getBolinhaPoder());
+        piscar.setFromValue(1);
+        piscar.setToValue(0.25);
+        piscar.setCycleCount(Animation.INDEFINITE);
+        piscar.setAutoReverse(true);
+        piscarPoder = piscar;
+        tocar(piscar);
+    }
+
+    public void removerItemPoder() {
+        if (piscarPoder != null) {
+            piscarPoder.stop();
+            animacoes.remove(piscarPoder);
+            piscarPoder = null;
+        }
+        if (casaPoder != null) {
+            casaPoder.getBolinhaPoder().setOpacity(1);
+            casaPoder.setItemPoder(false);
+            casaPoder = null;
+        }
+    }
+
+    public void setFantasmaInteligente(int x, int y) {
+        if (fantasmaInteligente == null) {
+            fantasmaInteligente = new StackPane(Sprites.fantasmaInteligente(celula * 0.57));
+            Ui.tamanhoFixo(fantasmaInteligente, celula, celula);
+            // Fica embaixo dos pacmans: quem tem poder aparece "comendo" o fantasma.
+            camadaPacman.getChildren().add(0, fantasmaInteligente);
+        }
+        if (passoFantasma != null) {
+            passoFantasma.stop();
+            animacoes.remove(passoFantasma);
+            passoFantasma = null;
+        }
+        fantasmaInteligente.setScaleX(1);
+        fantasmaInteligente.setScaleY(1);
+        fantasmaInteligente.setOpacity(1);
+        fantasmaInteligente.setTranslateX(x * celula);
+        fantasmaInteligente.setTranslateY((N - 1 - y) * celula);
+    }
+
+    public void moverFantasmaInteligente(int x, int y, Duration duracao) {
+        if (fantasmaInteligente == null) {
+            setFantasmaInteligente(x, y);
+            return;
+        }
+        if (passoFantasma != null) {
+            passoFantasma.stop();
+            animacoes.remove(passoFantasma);
+        }
+        TranslateTransition passo = new TranslateTransition(duracao, fantasmaInteligente);
+        passo.setToX(x * celula);
+        passo.setToY((N - 1 - y) * celula);
+        passo.setInterpolator(Interpolator.EASE_BOTH);
+        passoFantasma = passo;
+        tocar(passo);
+    }
+
+    public void removerFantasmaInteligente(boolean animado) {
+        if (fantasmaInteligente == null) {
+            return;
+        }
+        StackPane fantasma = fantasmaInteligente;
+        fantasmaInteligente = null;
+        if (passoFantasma != null) {
+            passoFantasma.stop();
+            animacoes.remove(passoFantasma);
+            passoFantasma = null;
+        }
+        if (!animado) {
+            camadaPacman.getChildren().remove(fantasma);
+            return;
+        }
+        ScaleTransition encolher = new ScaleTransition(Duration.millis(450), fantasma);
+        encolher.setToX(0);
+        encolher.setToY(0);
+        FadeTransition sumir = new FadeTransition(Duration.millis(450), fantasma);
+        sumir.setToValue(0);
+        ParallelTransition comido = new ParallelTransition(encolher, sumir);
+        comido.setOnFinished(e -> camadaPacman.getChildren().remove(fantasma));
+        tocar(comido);
+    }
+
     public boolean temAnimacaoDeMorte() {
         return !morrendo.isEmpty();
     }
@@ -372,8 +478,10 @@ public class BoardView extends StackPane {
         final ImageView sprite;
         final Image aberto;
         final Image fechado;
+        final Circle halo;
         TranslateTransition deslize;
-        boolean pequeno;
+        Animation pulso;
+        double escala = 1;
 
         PacmanNode(Robo robo, int numero) {
             this.robo = robo;
@@ -383,6 +491,15 @@ public class BoardView extends StackPane {
             sprite = Sprites.view(bocaAberta ? aberto : fechado, tamanho);
             Color cor = CoresPacman.pacman(robo.getCor());
             Sprites.tingir(sprite, cor, tamanho);
+            halo = new Circle(tamanho * 0.62, Color.TRANSPARENT);
+            halo.setStroke(cor);
+            halo.setStrokeWidth(Math.max(2, tamanho * 0.06));
+            halo.setEffect(new DropShadow(tamanho * 0.35, cor));
+            halo.setVisible(false);
+            // Fora do layout: o halo é maior que o sprite e não pode empurrar o número do pacman.
+            halo.setManaged(false);
+            halo.setLayoutX(tamanho / 2);
+            halo.setLayoutY(tamanho / 2);
 
             double diametro = Math.max(16, celula * 0.16);
             Label badge = Ui.label(String.valueOf(numero), "pixel");
@@ -392,7 +509,7 @@ public class BoardView extends StackPane {
                     + "-fx-padding: 1 0 0 1;");
             Ui.tamanhoFixo(badge, diametro, diametro);
 
-            VBox pilha = new VBox(-diametro * 0.15, new StackPane(sprite), badge);
+            VBox pilha = new VBox(-diametro * 0.15, new StackPane(halo, sprite), badge);
             pilha.setAlignment(Pos.CENTER);
             corpo = new StackPane(pilha);
             getChildren().add(corpo);
@@ -409,16 +526,44 @@ public class BoardView extends StackPane {
             sprite.setScaleX("left".equals(direcao) ? -1 : 1);
         }
 
-        void encolher(boolean dividir) {
-            if (dividir == pequeno) {
+        void encolher(int naCasa) {
+            double nova = naCasa <= 1 ? 1 : naCasa == 2 ? 54.0 / 74.0 : 0.6;
+            if (nova == escala) {
                 return;
             }
-            pequeno = dividir;
-            double escala = dividir ? 54.0 / 74.0 : 1;
+            escala = nova;
             ScaleTransition t = new ScaleTransition(Duration.millis(120), this);
-            t.setToX(escala);
-            t.setToY(escala);
+            t.setToX(nova);
+            t.setToY(nova);
             tocar(t);
+        }
+
+        // Halo pulsando enquanto o pacman tem poder.
+        void setPoder(boolean comPoder) {
+            if (comPoder == (pulso != null)) {
+                return;
+            }
+            if (!comPoder) {
+                pulso.stop();
+                animacoes.remove(pulso);
+                pulso = null;
+                halo.setVisible(false);
+                return;
+            }
+            halo.setVisible(true);
+            ScaleTransition crescer = new ScaleTransition(Duration.millis(500), halo);
+            crescer.setFromX(0.9);
+            crescer.setFromY(0.9);
+            crescer.setToX(1.15);
+            crescer.setToY(1.15);
+            FadeTransition brilhar = new FadeTransition(Duration.millis(500), halo);
+            brilhar.setFromValue(1);
+            brilhar.setToValue(0.35);
+            ParallelTransition p = new ParallelTransition(crescer, brilhar);
+            p.setCycleCount(Animation.INDEFINITE);
+            p.setAutoReverse(true);
+            pulso = p;
+            tocar(p);
         }
 
         void mover(double x, double y, Duration duracao) {
