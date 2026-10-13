@@ -21,9 +21,11 @@ import robotgame.modelo.EventoPartida;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
 import robotgame.modelo.RoboInteligente;
+import robotgame.modelo.RoboSuperInteligente;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.Sons;
 import robotgame.ui.components.BoardView;
+import robotgame.ui.components.Chip;
 import robotgame.ui.components.DiaryList;
 import robotgame.ui.components.Icones;
 import robotgame.ui.components.KeyCap;
@@ -31,6 +33,7 @@ import robotgame.ui.components.MessageBar;
 import robotgame.ui.components.NeonCard;
 import robotgame.ui.components.ScoreCard;
 import robotgame.ui.components.Sprites;
+import robotgame.ui.components.StatTile;
 import robotgame.ui.components.StepperBar;
 import robotgame.ui.components.Ui;
 import robotgame.ui.partida.CoresPacman;
@@ -40,8 +43,11 @@ import robotgame.ui.theme.Tema;
 
 public class ResultScreen implements Tela {
 
+    // Os eventos do modo 5 (poder e fantasma esperto) só acontecem no PACMAN_PODER.
     private static final Set<EventoPartida.Tipo> RELEVANTES = EnumSet.of(EventoPartida.Tipo.ROCHA,
-            EventoPartida.Tipo.EXPLODIU, EventoPartida.Tipo.FANTASMA_SUMIU, EventoPartida.Tipo.ACHOU_ALIMENTO);
+            EventoPartida.Tipo.EXPLODIU, EventoPartida.Tipo.FANTASMA_SUMIU, EventoPartida.Tipo.ACHOU_ALIMENTO,
+            EventoPartida.Tipo.PEGOU_PODER, EventoPartida.Tipo.COMEU_FANTASMA,
+            EventoPartida.Tipo.COMEU_FANTASMA_BURRO, EventoPartida.Tipo.ELIMINADO_PELO_FANTASMA);
 
     private final Navegador navegador;
     private final ResultadoPartida resultado;
@@ -100,17 +106,22 @@ public class ResultScreen implements Tela {
         vencedor.setPadding(new Insets(0, 22, 0, 22));
         Ui.tamanhoFixo(vencedor, LayoutJogo.LARGURA_PAINEL, 112);
 
-        ScoreCard[] placares = new ScoreCard[robos.length];
+        Node[] placares = new Node[robos.length];
         for (int i = 0; i < robos.length; i++) {
             Robo r = robos[i];
             String nome = modo.isManual() ? "PACMAN 1" : "PACMAN " + (i + 1);
-            String sub = modo.isManual() ? "você controlou" : r instanceof RoboInteligente ? "inteligente" : "normal";
-            placares[i] = new ScoreCard(CoresPacman.pacman(r.getCor()), nome, sub, 140, "VÁLIDOS", "INVÁLIDOS", "TOTAL");
-            placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
+            String sub = modo.isManual() ? "você controlou" : tipo(r);
+            if (modo == ModoJogo.PACMAN_PODER) {
+                placares[i] = placarCompacto(r, nome, sub);
+                continue;
+            }
+            ScoreCard placar = new ScoreCard(CoresPacman.pacman(r.getCor()), nome, sub, 140, "VÁLIDOS", "INVÁLIDOS", "TOTAL");
+            placar.setValores(String.valueOf(r.getMovimentosValidos()),
                     String.valueOf(r.getMovimentosInvalidos()), String.valueOf(r.getTotalMovimentos()));
-            placares[i].setStatus(situacao(r), corSituacao(r));
+            placar.setStatus(situacao(r), corSituacao(r));
+            placares[i] = placar;
         }
-        Node linhaPlacares = Ui.linhaIgual(12, placares);
+        Node linhaPlacares = Ui.linhaIgual(modo == ModoJogo.PACMAN_PODER ? 8 : 12, placares);
 
         comoTerminou = new DiaryList(resultado.diario().getEntradas(), 3, modo.isManual()
                 ? e -> e.evento() != null
@@ -204,6 +215,11 @@ public class ResultScreen implements Tela {
             return;
         }
 
+        if (modo == ModoJogo.PACMAN_PODER) {
+            calcularTextosPoder(diario);
+            return;
+        }
+
         if (modo == ModoJogo.NORMAL_X_INTELIGENTE && resultado.achou(robos[0]) && resultado.achou(robos[1])) {
             int m1 = robos[0].getTotalMovimentos();
             int m2 = robos[1].getTotalMovimentos();
@@ -248,7 +264,64 @@ public class ResultScreen implements Tela {
         rodape = todosExplodiram ? "Os dois pacmans foram eliminados." : resultado.mensagem();
     }
 
+    // Os textos vêm do resultado da SimulacaoPoder (getResultado()), que chega em resultado.mensagem().
+    private void calcularTextosPoder(DiarioPartida diario) {
+        destaque = null;
+        for (Robo r : robos) {
+            if (resultado.achou(r)) {
+                destaque = r;
+            }
+        }
+        boolean todosEliminados = true;
+        for (Robo r : robos) {
+            todosEliminados &= !r.isAtivo();
+        }
+
+        if (destaque != null) {
+            String nome = diario.nome(destaque);
+            titulo = nome.toUpperCase() + " VENCEU!";
+            faixa = nome + " achou a fruta!";
+        } else if (todosEliminados) {
+            titulo = "O FANTASMA VENCEU!";
+            faixa = "Os três foram eliminados";
+        } else {
+            titulo = "NINGUÉM ACHOU A FRUTA";
+            faixa = "Ninguém achou a fruta";
+        }
+        detalhe = resultado.mensagem();
+        rodape = resultado.mensagem();
+    }
+
+    // Com 3 cartões lado a lado o ScoreCard não cabe: o status vai numa linha própria, sem a coluna TOTAL.
+    private Node placarCompacto(Robo r, String nome, String sub) {
+        Color cor = CoresPacman.pacman(r.getCor());
+        Label titulo = Ui.label(nome, 10.5, "pixel");
+        titulo.setTextFill(cor);
+        HBox topo = Ui.linha(8, Sprites.pacman(cor, 26), new VBox(4, titulo, Ui.label(sub, 12.5, "muted")));
+        HBox status = new HBox(new Chip(situacao(r), corSituacao(r)));
+        HBox valores = Ui.linhaIgual(6, new StatTile("VÁLIDOS", String.valueOf(r.getMovimentosValidos()), 13),
+                new StatTile("INVÁLIDOS", String.valueOf(r.getMovimentosInvalidos()), 13));
+        NeonCard cartao = new NeonCard(null, topo, status, Ui.espaco(), valores);
+        cartao.setSpacing(8);
+        cartao.setPadding(new Insets(12));
+        cartao.setMinHeight(164);
+        cartao.setPrefHeight(164);
+        cartao.setMaxHeight(164);
+        return cartao;
+    }
+
+    // RoboSuperInteligente é subclasse de RoboInteligente: precisa ser testado antes.
+    private static String tipo(Robo r) {
+        if (r instanceof RoboSuperInteligente) {
+            return "super";
+        }
+        return r instanceof RoboInteligente ? "inteligente" : "normal";
+    }
+
     private String situacao(Robo r) {
+        if (modo == ModoJogo.PACMAN_PODER) {
+            return !r.isAtivo() ? "ELIMINADO" : resultado.achou(r) ? "VENCEU" : "VIVO";
+        }
         if (!r.isAtivo()) {
             return "EXPLODIU";
         }
@@ -259,6 +332,9 @@ public class ResultScreen implements Tela {
     }
 
     private Color corSituacao(Robo r) {
+        if (modo == ModoJogo.PACMAN_PODER) {
+            return !r.isAtivo() ? Tema.VERMELHO : resultado.achou(r) ? Tema.AMARELO : Tema.TEXTO_SECUNDARIO;
+        }
         if (!r.isAtivo()) {
             return Tema.VERMELHO;
         }
