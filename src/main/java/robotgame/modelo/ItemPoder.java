@@ -6,6 +6,7 @@ public class ItemPoder {
 
     private final int x;
     private final int y;
+    private int rodadasRestantes = VIDA;
 
     public ItemPoder(int x, int y) {
         this.x = x;
@@ -21,14 +22,16 @@ public class ItemPoder {
     }
 
     public int getRodadasRestantes() {
-        throw new UnsupportedOperationException("TODO");
+        return rodadasRestantes;
     }
 
     public void passarRodada() {
-        throw new UnsupportedOperationException("TODO");
+        if (rodadasRestantes > 0) {
+            rodadasRestantes--;
+        }
     }
 
     public boolean expirou() {
-        throw new UnsupportedOperationException("TODO");
+        return rodadasRestantes == 0;
     }
 }
