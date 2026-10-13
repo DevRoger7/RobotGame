@@ -11,14 +11,19 @@ import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 
 import robotgame.excecao.MovimentoInvalidoException;
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
+import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.RoboInteligente;
+import robotgame.modelo.RoboSuperInteligente;
 import robotgame.modelo.Simulacao;
+import robotgame.modelo.SimulacaoPoder;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.Sons;
 import robotgame.ui.components.BoardView;
@@ -64,6 +69,8 @@ public class GameScreen implements Tela {
     private final VBox raiz;
 
     private Simulacao simulacao;
+    // Usada só no modo PACMAN_PODER, no lugar de simulacao.
+    private SimulacaoPoder simulacaoPoder;
     private Timeline animacaoBoca;
     private Timeline animacaoSimulacao;
     private FadeTransition animacaoStart;
@@ -92,6 +99,10 @@ public class GameScreen implements Tela {
         board.setFruta(tabuleiro.getXAlimento(), tabuleiro.getYAlimento(), Sprites.fruta(config.getIndiceFruta(), 80));
         board.carregarObstaculos(tabuleiro);
         board.setRobos(robos);
+        FantasmaInteligente fantasma = tabuleiro.getFantasmaInteligente();
+        if (fantasma != null) {
+            board.setFantasmaInteligente(fantasma.getX(), fantasma.getY());
+        }
         montarSobreposicoes();
 
         controles = new ControlsPanel(!modo.isManual(), this::alternarPausa, this::alternarSom,
@@ -108,8 +119,15 @@ public class GameScreen implements Tela {
         } else {
             placares = new ScoreCard[robos.length];
             for (int i = 0; i < robos.length; i++) {
-                placares[i] = new ScoreCard(cor(robos[i]), "PACMAN " + (i + 1), tipo(robos[i]), 132,
-                        "POSIÇÃO", "VÁLIDOS", "INVÁLIDOS");
+                if (modo == ModoJogo.PACMAN_PODER) {
+                    // 3 cartões lado a lado: sem a coluna POSIÇÃO (já aparece no tabuleiro) e status embaixo do nome.
+                    placares[i] = new ScoreCard(cor(robos[i]), "PACMAN " + (i + 1), tipo(robos[i]), 156,
+                            "VÁLIDOS", "INVÁLIDOS");
+                    placares[i].statusAbaixoDoNome();
+                } else {
+                    placares[i] = new ScoreCard(cor(robos[i]), "PACMAN " + (i + 1), tipo(robos[i]), 132,
+                            "POSIÇÃO", "VÁLIDOS", "INVÁLIDOS");
+                }
             }
             dpad = null;
             diaryList = new DiaryList(diario.getEntradas(), 6, e -> true);
@@ -166,6 +184,9 @@ public class GameScreen implements Tela {
     }
 
     private NeonCard legenda() {
+        if (modo == ModoJogo.PACMAN_PODER) {
+            return legendaPoder();
+        }
         int itens = (modo.isManual() ? 1 : robos.length) + 2 + (modo.isComObstaculos() ? 2 : 0);
         LegendGrid grade = new LegendGrid(LegendGrid.colunasPara(itens));
         if (modo.isManual()) {
@@ -181,6 +202,20 @@ public class GameScreen implements Tela {
             grade.item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "volta 1 casa");
         }
         grade.item(LayoutJogo.iconeProibido(), "Proibido", "inválido");
+        return new NeonCard("LEGENDA", grade);
+    }
+
+    private NeonCard legendaPoder() {
+        LegendGrid grade = new LegendGrid(LegendGrid.colunasPara(robos.length + 5));
+        for (int i = 0; i < robos.length; i++) {
+            grade.item(Sprites.pacman(cor(robos[i]), 22), "Pacman " + (i + 1), tipo(robos[i]));
+        }
+        grade.item(Sprites.fantasmaInteligente(22), "Fantasma esperto", "caça os pacmans");
+        grade.item(Sprites.view(Sprites.fantasma("azul", 22), 22), "Fantasma burro", "elimina");
+        grade.item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "volta 1 casa");
+        // Mesma cor da bolinha desenhada no CellView.
+        grade.item(new Circle(7, Color.web("#ffb897")), "Bolinha de poder", "come fantasmas");
+        grade.item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "objetivo");
         return new NeonCard("LEGENDA", grade);
     }
 
@@ -235,8 +270,13 @@ public class GameScreen implements Tela {
     }
 
     private void iniciarSimulacao() {
-        simulacao = new Simulacao(modo, tabuleiro, robos);
-        simulacao.setOuvinte(this::aoEvento);
+        if (modo == ModoJogo.PACMAN_PODER) {
+            simulacaoPoder = new SimulacaoPoder(tabuleiro, robos);
+            simulacaoPoder.setOuvinte(this::aoEvento);
+        } else {
+            simulacao = new Simulacao(modo, tabuleiro, robos);
+            simulacao.setOuvinte(this::aoEvento);
+        }
         animacaoSimulacao = new Timeline(new KeyFrame(INTERVALO_SIMULACAO, e -> executarPasso()));
         animacaoSimulacao.setCycleCount(Timeline.INDEFINITE);
         animacaoSimulacao.setRate(INTERVALO_SIMULACAO.toMillis() / intervaloMs);
@@ -244,6 +284,10 @@ public class GameScreen implements Tela {
     }
 
     private void executarPasso() {
+        if (simulacaoPoder != null) {
+            executarPassoPoder();
+            return;
+        }
         Simulacao.Passo passo = simulacao.proximoPasso();
         Robo robo = passo.robo();
         if (!robo.isAtivo()) {
@@ -257,6 +301,34 @@ public class GameScreen implements Tela {
         if (simulacao.isTerminada()) {
             finalizar(simulacao.getResultado());
         }
+    }
+
+    // No turno do fantasma Passo.robo() é null, e ele pode eliminar mais de um pacman de uma vez.
+    private void executarPassoPoder() {
+        int ativosAntes = ativos();
+        Simulacao.Passo passo = simulacaoPoder.proximoPasso();
+        Robo robo = passo.robo();
+        if (ativos() < ativosAntes) {
+            iniciarMorte();
+        } else if (robo != null && tabuleiro.alimentoEncontradoPor(robo)) {
+            sons.tocarFruta();
+        }
+        atualizarPainel();
+        mostrarUltimo();
+
+        if (simulacaoPoder.isTerminada()) {
+            finalizar(simulacaoPoder.getResultado());
+        }
+    }
+
+    private int ativos() {
+        int n = 0;
+        for (Robo r : robos) {
+            if (r.isAtivo()) {
+                n++;
+            }
+        }
+        return n;
     }
 
     private void mudarVelocidade(int nivel) {
@@ -343,6 +415,29 @@ public class GameScreen implements Tela {
                 board.explodir(e.robo(), deslize, null);
             }
             case FANTASMA_SUMIU -> board.animarFantasmaSumindo(e.x(), e.y());
+            case PODER_APARECEU -> board.setItemPoder(e.x(), e.y());
+            case PODER_SUMIU -> board.removerItemPoder();
+            case PEGOU_PODER -> {
+                board.setDirecao(e.robo(), e.direcao());
+                board.removerItemPoder();
+                board.sincronizar(deslize);
+                sons.tocarFruta();
+            }
+            case PODER_ACABOU -> board.sincronizar(deslize);
+            case FANTASMA_MOVEU -> board.moverFantasmaInteligente(e.x(), e.y(), deslize);
+            // Nestes dois a direção pode ser a do fantasma (turno dele), então o pacman não é virado.
+            case COMEU_FANTASMA -> {
+                board.sincronizar(deslize);
+                board.removerFantasmaInteligente(true);
+                sons.tocarFruta();
+            }
+            case ELIMINADO_PELO_FANTASMA -> board.explodir(e.robo(), deslize, null);
+            case COMEU_FANTASMA_BURRO -> {
+                board.setDirecao(e.robo(), e.direcao());
+                board.carregarObstaculos(tabuleiro);
+                board.sincronizar(deslize);
+                sons.tocarFruta();
+            }
         }
     }
 
@@ -362,6 +457,16 @@ public class GameScreen implements Tela {
                         String.valueOf(r.getMovimentosInvalidos()));
                 boolean achou = tabuleiro.alimentoEncontradoPor(r);
                 placares[i].setStatus(achou ? "ACHOU" : "JOGANDO", Tema.VERDE);
+            } else if (modo == ModoJogo.PACMAN_PODER) {
+                placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
+                        String.valueOf(r.getMovimentosInvalidos()));
+                if (!r.isAtivo()) {
+                    placares[i].setStatus("ELIMINADO", Tema.VERMELHO);
+                } else if (tabuleiro.alimentoEncontradoPor(r)) {
+                    placares[i].setStatus("ACHOU", Tema.VERDE);
+                } else {
+                    placares[i].setStatus("ATIVO", Tema.VERDE);
+                }
             } else {
                 placares[i].setValores(r.isAtivo() ? posicao : "—", String.valueOf(r.getMovimentosValidos()),
                         String.valueOf(r.getMovimentosInvalidos()));
@@ -480,6 +585,10 @@ public class GameScreen implements Tela {
         if (modo.isManual()) {
             return "Você achou a fruta em " + robos[0].getTotalMovimentos() + " movimentos.";
         }
+        if (modo == ModoJogo.PACMAN_PODER) {
+            // Vários podem estar na fruta; o texto da SimulacaoPoder diz quem chegou primeiro.
+            return resultado;
+        }
         for (Robo r : robos) {
             if (modo != ModoJogo.NORMAL_X_INTELIGENTE && r.isAtivo() && tabuleiro.alimentoEncontradoPor(r)) {
                 return diario.nome(r) + " achou a fruta em " + r.getTotalMovimentos() + " movimentos.";
@@ -515,6 +624,10 @@ public class GameScreen implements Tela {
             simulacao.setOuvinte(e -> {
             });
         }
+        if (simulacaoPoder != null) {
+            simulacaoPoder.setOuvinte(e -> {
+            });
+        }
         if (indoParaFim) {
             sons.pararInicio();
             sons.pararWakawaka();
@@ -523,11 +636,15 @@ public class GameScreen implements Tela {
         }
     }
 
-    private static javafx.scene.paint.Color cor(Robo r) {
+    private static Color cor(Robo r) {
         return CoresPacman.pacman(r.getCor());
     }
 
+    // RoboSuperInteligente é subclasse de RoboInteligente: precisa ser testado antes.
     private static String tipo(Robo r) {
+        if (r instanceof RoboSuperInteligente) {
+            return "super";
+        }
         return r instanceof RoboInteligente ? "inteligente" : "normal";
     }
 }

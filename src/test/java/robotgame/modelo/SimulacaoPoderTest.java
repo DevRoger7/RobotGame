@@ -305,16 +305,95 @@ class SimulacaoPoderTest {
     }
 
     @Test
-    void pacmanQueAchaAFrutaVence() throws Exception {
+    void partidaSoTerminaQuandoTodosOsVivosAchamAFrutaEVenceOPrimeiro() throws Exception {
         tabuleiro = new Tabuleiro(1, 0);
         azul.roteiro("right");
+        verde.roteiro("right");
+        rosa.roteiro("right");
         iniciar();
 
+        simulacao.proximoPasso();
+        assertFalse(simulacao.isTerminada());
+        simulacao.proximoPasso();
+        assertFalse(simulacao.isTerminada());
         simulacao.proximoPasso();
 
         assertTrue(simulacao.isTerminada());
         assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
-        assertEquals(List.of(EventoPartida.Tipo.ACHOU_ALIMENTO), tipos());
+        assertEquals(List.of(EventoPartida.Tipo.ACHOU_ALIMENTO, EventoPartida.Tipo.ACHOU_ALIMENTO,
+                EventoPartida.Tipo.ACHOU_ALIMENTO), tipos());
+    }
+
+    @Test
+    void quemAchouAFrutaNaoJogaMais() throws Exception {
+        tabuleiro = new Tabuleiro(1, 0);
+        azul.roteiro("right", "left");
+        iniciar();
+
+        List<Robo> atores = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            atores.add(simulacao.proximoPasso().robo());
+        }
+
+        assertEquals(List.of(azul, verde, rosa, verde, rosa, verde, rosa), atores);
+        assertEquals(1, azul.getX());
+        assertEquals(0, azul.getY());
+        assertFalse(simulacao.isTerminada());
+    }
+
+    @Test
+    void eliminadoNaoPrecisaAcharAFruta() throws Exception {
+        tabuleiro = new Tabuleiro(1, 0);
+        tabuleiro.adicionarObstaculo(new Fantasma("vermelho"), 0, 1);
+        azul.roteiro("right");
+        verde.roteiro("right");
+        rosa.roteiro("up");
+        iniciar();
+
+        simulacao.proximoPasso();
+        simulacao.proximoPasso();
+        assertFalse(simulacao.isTerminada());
+        simulacao.proximoPasso();
+
+        assertFalse(rosa.isAtivo());
+        assertTrue(simulacao.isTerminada());
+        assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
+    }
+
+    @Test
+    void fantasmaNaoCacaNemPegaQuemJaEstaNaFruta() throws Exception {
+        tabuleiro = new Tabuleiro(1, 0);
+        posicionar(azul, 1, 0);
+        tabuleiro.setFantasmaInteligente(new FantasmaInteligente(2, 0));
+        iniciar();
+
+        // 1º turno do fantasma: vai atrás do verde em (0,0) e passa pela fruta, onde está o azul.
+        turnoDe(null);
+        assertEquals(1, tabuleiro.getFantasmaInteligente().getX());
+        assertTrue(azul.isAtivo());
+        assertEquals(0, contar(EventoPartida.Tipo.ELIMINADO_PELO_FANTASMA));
+
+        // 2º turno: pega o verde e o rosa em (0,0). Só sobra o azul, que já está na fruta.
+        turnoDe(null);
+        assertFalse(verde.isAtivo());
+        assertFalse(rosa.isAtivo());
+        assertTrue(azul.isAtivo());
+        assertTrue(simulacao.isTerminada());
+        assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
+    }
+
+    @Test
+    void limiteDeRodadasComAlguemNaFrutaDaAVitoriaAoPrimeiro() throws Exception {
+        tabuleiro = new Tabuleiro(1, 0);
+        azul.roteiro("right");
+        iniciar();
+
+        while (!simulacao.isTerminada()) {
+            simulacao.proximoPasso();
+        }
+
+        assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
+        assertTrue(verde.isAtivo() && rosa.isAtivo());
     }
 
     @Test
@@ -410,6 +489,8 @@ class SimulacaoPoderTest {
         tabuleiro.setFantasmaInteligente(new FantasmaInteligente(1, 1));
         azul.darPoder();
         azul.roteiro(PARADO, "right");
+        verde.roteiro(PARADO, "right");
+        rosa.roteiro(PARADO, "right");
         iniciar();
 
         // Rodada 1: o fantasma desce e para em cima da fruta (1,0).
@@ -428,6 +509,12 @@ class SimulacaoPoderTest {
         assertEquals(1, eventos.get(1).x());
         assertEquals(0, eventos.get(1).y());
         assertNull(tabuleiro.getFantasmaInteligente());
+        // Ainda faltam o verde e o rosa chegarem à fruta.
+        assertFalse(simulacao.isTerminada());
+
+        simulacao.proximoPasso();
+        simulacao.proximoPasso();
+
         assertTrue(simulacao.isTerminada());
         assertEquals("Pacman azul encontrou o alimento e venceu!", simulacao.getResultado());
     }

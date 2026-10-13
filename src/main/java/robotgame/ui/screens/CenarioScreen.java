@@ -14,6 +14,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.FantasmaInteligente;
+import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Obstaculo;
 import robotgame.modelo.Rocha;
 import robotgame.modelo.Tabuleiro;
@@ -48,6 +50,8 @@ public class CenarioScreen implements Tela {
     private final Label proximoFantasma = Ui.label("", 14.5, "muted");
     private final StackPane iconeFantasma = new StackPane();
 
+    // Modo PACMAN_PODER: o fantasma esperto fica fixo na casa inicial dele.
+    private final boolean poder;
     private TipoObstaculo ferramenta = TipoObstaculo.FANTASMA;
     private int fantasmasColocados;
 
@@ -55,10 +59,18 @@ public class CenarioScreen implements Tela {
         this.navegador = navegador;
         this.config = config;
         tabuleiro = new Tabuleiro(config.getXFruta(), config.getYFruta());
+        poder = config.getModo() == ModoJogo.PACMAN_PODER;
+        if (poder && !frutaNaCasaDoFantasma()) {
+            // Antes dos obstáculos: assim o Tabuleiro recusa qualquer obstáculo nessa casa.
+            tabuleiro.setFantasmaInteligente(new FantasmaInteligente());
+        }
         restaurarObstaculos();
 
         board.setFruta(config.getXFruta(), config.getYFruta(), Sprites.fruta(config.getIndiceFruta(), 80));
         board.setRobos(config.criarRobos());
+        if (tabuleiro.getFantasmaInteligente() != null) {
+            board.setFantasmaInteligente(FantasmaInteligente.X_INICIAL, FantasmaInteligente.Y_INICIAL);
+        }
         board.carregarObstaculos(tabuleiro);
         board.setAoClicar(this::clicarCasa);
         board.setPrevia(this::previa);
@@ -80,8 +92,14 @@ public class CenarioScreen implements Tela {
                 .item(Sprites.view(Sprites.fantasma("azul", 22), 22), "Fantasma",
                         "elimina o pacman que encostar nele; depois some do tabuleiro")
                 .item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "faz o pacman voltar para a casa anterior")
-                .item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "o objetivo da partida")
-                .item(doisPacmans, "Pacman 1 e 2", "começam juntos em (0, 0)");
+                .item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "o objetivo da partida");
+        if (poder) {
+            // No lugar da linha dos pacmans, que não caberia: os 3 já aparecem numerados em (0, 0).
+            legenda.item(Sprites.fantasmaInteligente(22), "Fantasma esperto",
+                    "fixo em " + posicaoFantasma() + "; caça os pacmans durante a partida");
+        } else {
+            legenda.item(doisPacmans, "Pacman 1 e 2", "começam juntos em (0, 0)");
+        }
         legenda.setVgap(6);
         NeonCard cartaoLegenda = new NeonCard("O QUE CADA COISA FAZ", legenda);
         LayoutJogo.crescer(cartaoLegenda);
@@ -96,7 +114,13 @@ public class CenarioScreen implements Tela {
         Button comecar = Ui.primario("COMEÇAR SIMULAÇÃO", "btn-verde", 64);
         comecar.setStyle("-fx-font-size: 14px;");
         comecar.setGraphic(Icones.play(Tema.FUNDO, 14));
-        comecar.setOnAction(e -> navegador.irParaJogo(config));
+        comecar.setOnAction(e -> {
+            if (poder && frutaNaCasaDoFantasma()) {
+                mensagem.mostrar("AVISO", avisoFruta(), Tema.VERMELHO);
+                return;
+            }
+            navegador.irParaJogo(config);
+        });
         VBox acoes = new VBox(12, Ui.linhaIgual(14, voltar, limpar), comecar);
         acoes.getStyleClass().add("neon-card");
         acoes.setPadding(new Insets(14, 18, 18, 18));
@@ -153,7 +177,26 @@ public class CenarioScreen implements Tela {
         return tipo == TipoObstaculo.FANTASMA ? new Fantasma(cor) : new Rocha();
     }
 
+    private boolean frutaNaCasaDoFantasma() {
+        return config.getXFruta() == FantasmaInteligente.X_INICIAL && config.getYFruta() == FantasmaInteligente.Y_INICIAL;
+    }
+
+    private boolean casaDoFantasma(int x, int y) {
+        return poder && x == FantasmaInteligente.X_INICIAL && y == FantasmaInteligente.Y_INICIAL;
+    }
+
+    private static String posicaoFantasma() {
+        return "(" + FantasmaInteligente.X_INICIAL + ", " + FantasmaInteligente.Y_INICIAL + ")";
+    }
+
+    private static String avisoFruta() {
+        return "A fruta não pode ficar em " + posicaoFantasma() + ", a casa do fantasma esperto.";
+    }
+
     private void clicarCasa(int x, int y) {
+        if (casaDoFantasma(x, y)) {
+            return;
+        }
         if (tabuleiro.getObstaculo(x, y) != null) {
             tabuleiro.removerObstaculo(x, y);
             config.getObstaculos().removeIf(o -> o.x() == x && o.y() == y);
@@ -176,6 +219,7 @@ public class CenarioScreen implements Tela {
 
     private Image previa(int x, int y) {
         boolean livre = tabuleiro.getObstaculo(x, y) == null
+                && !casaDoFantasma(x, y)
                 && !(x == 0 && y == 0)
                 && !(x == tabuleiro.getXAlimento() && y == tabuleiro.getYAlimento())
                 && !(ferramenta == TipoObstaculo.ROCHA && tabuleiro.fechariaCaminhoAoAlimento(x, y));
@@ -209,6 +253,10 @@ public class CenarioScreen implements Tela {
         cartaoFantasma.getStyleClass().remove("selected-glow");
         cartaoRocha.getStyleClass().remove("selected-glow");
         (ferramenta == TipoObstaculo.FANTASMA ? cartaoFantasma : cartaoRocha).getStyleClass().add("selected-glow");
+        if (poder && frutaNaCasaDoFantasma()) {
+            mensagem.mostrar("AVISO", avisoFruta(), Tema.VERMELHO);
+            return;
+        }
         mensagem.mostrar("DICA", ferramenta == TipoObstaculo.FANTASMA
                 ? "Toque numa casa para colocar um fantasma."
                 : "Toque numa casa para colocar uma rocha.");

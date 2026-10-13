@@ -6,8 +6,8 @@ import java.util.Random;
 
 public class GeradorPoder {
 
-    public static final int ESPERA_INICIAL = 5;
-    public static final int ESPERA_APOS_COMIDO = 5;
+    public static final int ESPERA_INICIAL = 2;
+    public static final int ESPERA_APOS_COMIDO = 2;
 
     private final Random random;
     private int espera = ESPERA_INICIAL;

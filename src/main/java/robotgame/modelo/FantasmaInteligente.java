@@ -51,7 +51,8 @@ public class FantasmaInteligente {
     private Robo escolherAlvo(Tabuleiro t, Robo[] robos) {
         for (int nivel = 0; nivel < 3; nivel++) {
             for (Robo robo : robos) {
-                if (nivelDe(robo) == nivel && robo.isAtivo()
+                // Quem já chegou à fruta está a salvo: não é mais caçado.
+                if (nivelDe(robo) == nivel && robo.isAtivo() && !t.alimentoEncontradoPor(robo)
                         && BuscaCaminho.distancia(t, x, y, robo.getX(), robo.getY(), false) != -1) {
                     return robo;
                 }

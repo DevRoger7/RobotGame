@@ -498,8 +498,6 @@ public class BoardView extends StackPane {
             halo.setVisible(false);
             // Fora do layout: o halo é maior que o sprite e não pode empurrar o número do pacman.
             halo.setManaged(false);
-            halo.setLayoutX(tamanho / 2);
-            halo.setLayoutY(tamanho / 2);
 
             double diametro = Math.max(16, celula * 0.16);
             Label badge = Ui.label(String.valueOf(numero), "pixel");
@@ -509,7 +507,11 @@ public class BoardView extends StackPane {
                     + "-fx-padding: 1 0 0 1;");
             Ui.tamanhoFixo(badge, diametro, diametro);
 
-            VBox pilha = new VBox(-diametro * 0.15, new StackPane(halo, sprite), badge);
+            StackPane caixaSprite = new StackPane(halo, sprite);
+            // A VBox estica a caixa na largura; o sprite fica no centro dela, então o halo também.
+            halo.layoutXProperty().bind(caixaSprite.widthProperty().divide(2));
+            halo.layoutYProperty().bind(caixaSprite.heightProperty().divide(2));
+            VBox pilha = new VBox(-diametro * 0.15, caixaSprite, badge);
             pilha.setAlignment(Pos.CENTER);
             corpo = new StackPane(pilha);
             getChildren().add(corpo);

@@ -11,6 +11,8 @@ public class ScoreCard extends NeonCard {
 
     private final Chip chip;
     private final StatTile[] tiles;
+    private final HBox topo;
+    private final VBox nomes;
 
     public ScoreCard(Color cor, String titulo, String subtitulo, double altura, String... rotulos) {
         super(null);
@@ -24,9 +26,9 @@ public class ScoreCard extends NeonCard {
         javafx.scene.control.Label nome = Ui.label(titulo, 10.5, "pixel");
         nome.setTextFill(cor);
         nome.setMinWidth(USE_PREF_SIZE);
-        VBox nomes = new VBox(5, nome, Ui.label(subtitulo, 12.5, "muted"));
+        nomes = new VBox(5, nome, Ui.label(subtitulo, 12.5, "muted"));
         chip.setMinWidth(USE_PREF_SIZE);
-        HBox topo = Ui.linha(10, Sprites.pacman(cor, 30), nomes, Ui.espaco(), chip);
+        topo = Ui.linha(10, Sprites.pacman(cor, 30), nomes, Ui.espaco(), chip);
         topo.setAlignment(Pos.TOP_LEFT);
 
         tiles = new StatTile[rotulos.length];
@@ -35,6 +37,12 @@ public class ScoreCard extends NeonCard {
         }
         HBox linha = Ui.linhaIgual(8, tiles);
         getChildren().addAll(topo, Ui.espaco(), linha);
+    }
+
+    // Para cartões estreitos (3 lado a lado): o status sai do lado do nome e vai para baixo dele.
+    public void statusAbaixoDoNome() {
+        topo.getChildren().remove(chip);
+        nomes.getChildren().add(new HBox(chip));
     }
 
     public void setStatus(String texto, Color cor) {

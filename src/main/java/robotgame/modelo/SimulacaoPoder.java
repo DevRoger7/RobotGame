@@ -20,6 +20,8 @@ public class SimulacaoPoder {
     private int vez;
     private int rodadas;
     private String resultado;
+    // Primeiro pacman a chegar à fruta: é o vencedor.
+    private Robo primeiroNaFruta;
 
     public SimulacaoPoder(Tabuleiro tabuleiro, Robo... robos) {
         this.tabuleiro = tabuleiro;
@@ -78,7 +80,8 @@ public class SimulacaoPoder {
         if (ator == robos.length) {
             return tabuleiro.getFantasmaInteligente() != null;
         }
-        return robos[ator].isAtivo();
+        // Quem já chegou à fruta para de jogar e espera os outros.
+        return robos[ator].isAtivo() && !tabuleiro.alimentoEncontradoPor(robos[ator]);
     }
 
     private Simulacao.Passo turnoDoPacman(Robo robo) {
@@ -171,7 +174,8 @@ public class SimulacaoPoder {
 
         List<Robo> naCasa = new ArrayList<>();
         for (Robo r : robos) {
-            if (r.isAtivo() && r.getX() == x && r.getY() == y) {
+            // Quem já está na fruta fica a salvo do fantasma.
+            if (r.isAtivo() && r.getX() == x && r.getY() == y && !tabuleiro.alimentoEncontradoPor(r)) {
                 naCasa.add(r);
             }
         }
@@ -199,15 +203,25 @@ public class SimulacaoPoder {
         return new Simulacao.Passo(null, direcao, mensagem.toString());
     }
 
+    // A partida só acaba quando todos os pacmans vivos chegaram à fruta; vence quem chegou primeiro.
     private void verificarFim() {
+        boolean todosVivosNaFruta = true;
         for (Robo r : robos) {
-            if (r.isAtivo() && tabuleiro.alimentoEncontradoPor(r)) {
-                resultado = "Pacman " + r.getCor() + " encontrou o alimento e venceu!";
-                return;
+            if (!r.isAtivo()) {
+                continue;
+            }
+            if (tabuleiro.alimentoEncontradoPor(r)) {
+                if (primeiroNaFruta == null) {
+                    primeiroNaFruta = r;
+                }
+            } else {
+                todosVivosNaFruta = false;
             }
         }
         if (!algumAtivo()) {
             resultado = "Os três pacmans foram eliminados!";
+        } else if (todosVivosNaFruta || (rodadas >= MAX_RODADAS && primeiroNaFruta != null)) {
+            resultado = "Pacman " + primeiroNaFruta.getCor() + " encontrou o alimento e venceu!";
         } else if (rodadas >= MAX_RODADAS) {
             resultado = "Limite de " + MAX_RODADAS + " rodadas atingido: nenhum pacman encontrou o alimento.";
         }

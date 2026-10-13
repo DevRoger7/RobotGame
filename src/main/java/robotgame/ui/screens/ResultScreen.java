@@ -266,10 +266,13 @@ public class ResultScreen implements Tela {
 
     // Os textos vêm do resultado da SimulacaoPoder (getResultado()), que chega em resultado.mensagem().
     private void calcularTextosPoder(DiarioPartida diario) {
+        // Vence o primeiro que chegou à fruta: o primeiro ACHOU_ALIMENTO do diário.
         destaque = null;
-        for (Robo r : robos) {
-            if (resultado.achou(r)) {
-                destaque = r;
+        for (DiarioPartida.Entrada entrada : diario.getEntradas()) {
+            EventoPartida e = entrada.evento();
+            if (e != null && e.tipo() == EventoPartida.Tipo.ACHOU_ALIMENTO && resultado.achou(e.robo())) {
+                destaque = e.robo();
+                break;
             }
         }
         boolean todosEliminados = true;
@@ -280,7 +283,7 @@ public class ResultScreen implements Tela {
         if (destaque != null) {
             String nome = diario.nome(destaque);
             titulo = nome.toUpperCase() + " VENCEU!";
-            faixa = nome + " achou a fruta!";
+            faixa = nome + " chegou primeiro à fruta!";
         } else if (todosEliminados) {
             titulo = "O FANTASMA VENCEU!";
             faixa = "Os três foram eliminados";
@@ -320,7 +323,7 @@ public class ResultScreen implements Tela {
 
     private String situacao(Robo r) {
         if (modo == ModoJogo.PACMAN_PODER) {
-            return !r.isAtivo() ? "ELIMINADO" : resultado.achou(r) ? "VENCEU" : "VIVO";
+            return !r.isAtivo() ? "ELIMINADO" : r == destaque ? "VENCEU" : resultado.achou(r) ? "ACHOU" : "VIVO";
         }
         if (!r.isAtivo()) {
             return "EXPLODIU";
@@ -333,7 +336,8 @@ public class ResultScreen implements Tela {
 
     private Color corSituacao(Robo r) {
         if (modo == ModoJogo.PACMAN_PODER) {
-            return !r.isAtivo() ? Tema.VERMELHO : resultado.achou(r) ? Tema.AMARELO : Tema.TEXTO_SECUNDARIO;
+            return !r.isAtivo() ? Tema.VERMELHO : r == destaque ? Tema.AMARELO
+                    : resultado.achou(r) ? Tema.VERDE : Tema.TEXTO_SECUNDARIO;
         }
         if (!r.isAtivo()) {
             return Tema.VERMELHO;
