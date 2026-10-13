@@ -88,6 +88,12 @@ public class ConfiguracaoPartida {
         if (modo.isPvp()) {
             Tabuleiro semFruta = Tabuleiro.semAlimento();
             semFruta.setFantasmaAleatorio(new FantasmaAleatorio());
+            // No PvP só há rochas: fantasmas colocados em outro modo são ignorados.
+            for (ObstaculoColocado o : obstaculos) {
+                if (o.tipo() == TipoObstaculo.ROCHA) {
+                    semFruta.adicionarObstaculo(new Rocha(), o.x(), o.y());
+                }
+            }
             return semFruta;
         }
         Tabuleiro tabuleiro = new Tabuleiro(xFruta, yFruta);

@@ -252,13 +252,17 @@ public class GameScreen implements Tela {
     }
 
     private NeonCard legendaPvp() {
-        LegendGrid grade = new LegendGrid(2);
+        boolean comRochas = !config.getObstaculos().isEmpty();
+        LegendGrid grade = new LegendGrid(comRochas ? 3 : 2);
         for (int i = 0; i < robos.length; i++) {
             grade.item(Sprites.pacman(cor(robos[i]), 22), "Jogador " + (i + 1), TECLAS_PVP[i]);
         }
-        grade.item(Sprites.fantasmaAleatorio(22), "Fantasma aleatório", "elimina sem poder");
+        grade.item(Sprites.fantasmaAleatorio(22), "Fantasma", "elimina sem poder");
         // Mesma cor da bolinha desenhada no CellView.
         grade.item(new Circle(7, Color.web("#ffb897")), "Bolinha de poder", "elimina o rival");
+        if (comRochas) {
+            grade.item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "volta 1 casa");
+        }
         return new NeonCard("LEGENDA", grade);
     }
 

@@ -14,6 +14,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.FantasmaAleatorio;
 import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Obstaculo;
@@ -52,13 +53,23 @@ public class CenarioScreen implements Tela {
 
     // Modo PACMAN_PODER: o fantasma esperto fica fixo na casa inicial dele.
     private final boolean poder;
+    // Modo PVP: só rochas, sem fruta, e o fantasma aleatório começa na casa dele.
+    private final boolean pvp;
     private TipoObstaculo ferramenta = TipoObstaculo.FANTASMA;
     private int fantasmasColocados;
 
     public CenarioScreen(Navegador navegador, ConfiguracaoPartida config) {
         this.navegador = navegador;
         this.config = config;
-        tabuleiro = new Tabuleiro(config.getXFruta(), config.getYFruta());
+        pvp = config.getModo().isPvp();
+        if (pvp) {
+            ferramenta = TipoObstaculo.ROCHA;
+            // Antes das rochas: assim o Tabuleiro recusa qualquer rocha na casa do fantasma.
+            tabuleiro = Tabuleiro.semAlimento();
+            tabuleiro.setFantasmaAleatorio(new FantasmaAleatorio());
+        } else {
+            tabuleiro = new Tabuleiro(config.getXFruta(), config.getYFruta());
+        }
         poder = config.getModo() == ModoJogo.PACMAN_PODER;
         if (poder && !frutaNaCasaDoFantasma()) {
             // Antes dos obstáculos: assim o Tabuleiro recusa qualquer obstáculo nessa casa.
@@ -66,8 +77,13 @@ public class CenarioScreen implements Tela {
         }
         restaurarObstaculos();
 
-        board.setFruta(config.getXFruta(), config.getYFruta(), Sprites.fruta(config.getIndiceFruta(), 80));
+        if (!pvp) {
+            board.setFruta(config.getXFruta(), config.getYFruta(), Sprites.fruta(config.getIndiceFruta(), 80));
+        }
         board.setRobos(config.criarRobos());
+        if (pvp) {
+            board.setFantasmaAleatorio(FantasmaAleatorio.X_INICIAL, FantasmaAleatorio.Y_INICIAL);
+        }
         if (tabuleiro.getFantasmaInteligente() != null) {
             board.setFantasmaInteligente(FantasmaInteligente.X_INICIAL, FantasmaInteligente.Y_INICIAL);
         }
@@ -80,7 +96,9 @@ public class CenarioScreen implements Tela {
         cartaoRocha = ferramenta(Sprites.view(Sprites.rocha(40), 40), "ROCHA",
                 Ui.label("Bloqueia o caminho", 14.5, "muted"), contagemRochas, TipoObstaculo.ROCHA);
         Label apoio = Ui.label("Toque de novo numa casa ocupada para remover o que estiver nela.", 13.5, "muted");
-        NeonCard escolha = new NeonCard("1 · ESCOLHA O QUE COLOCAR", cartaoFantasma, cartaoRocha, apoio);
+        NeonCard escolha = pvp
+                ? new NeonCard("1 · COLOQUE AS ROCHAS", cartaoRocha, apoio)
+                : new NeonCard("1 · ESCOLHA O QUE COLOCAR", cartaoFantasma, cartaoRocha, apoio);
         escolha.setSpacing(8);
 
         HBox doisPacmans = new HBox(-6);
@@ -88,12 +106,24 @@ public class CenarioScreen implements Tela {
             doisPacmans.getChildren().add(Sprites.pacman(CoresPacman.pacman(robo.getCor()), 18));
         }
         doisPacmans.setAlignment(Pos.CENTER);
-        LegendGrid legenda = new LegendGrid(1)
-                .item(Sprites.view(Sprites.fantasma("azul", 22), 22), "Fantasma",
-                        "elimina o pacman que encostar nele; depois some do tabuleiro")
-                .item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "faz o pacman voltar para a casa anterior")
-                .item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "o objetivo da partida");
-        if (poder) {
+        LegendGrid legenda = new LegendGrid(1);
+        if (pvp) {
+            legenda.item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "faz o pacman voltar para a casa anterior")
+                    .item(Sprites.pacman(CoresPacman.pacman(config.getCor1()), 22), "Jogador 1",
+                            "começa em (" + (Tabuleiro.TAMANHO - 1) + ", " + (Tabuleiro.TAMANHO - 1) + ")")
+                    .item(Sprites.pacman(CoresPacman.pacman(config.getCor2()), 22), "Jogador 2",
+                            "começa em (0, 0)")
+                    .item(Sprites.fantasmaAleatorio(22), "Fantasma aleatório",
+                            "começa em (" + FantasmaAleatorio.X_INICIAL + ", " + FantasmaAleatorio.Y_INICIAL + ")");
+        } else {
+            legenda.item(Sprites.view(Sprites.fantasma("azul", 22), 22), "Fantasma",
+                            "elimina o pacman que encostar nele; depois some do tabuleiro")
+                    .item(Sprites.view(Sprites.rocha(22), 22), "Rocha", "faz o pacman voltar para a casa anterior")
+                    .item(Sprites.view(Sprites.fruta(config.getIndiceFruta(), 22), 22), "Fruta", "o objetivo da partida");
+        }
+        if (pvp) {
+            // As posições iniciais já estão na legenda.
+        } else if (poder) {
             // No lugar da linha dos pacmans, que não caberia: os 3 já aparecem numerados em (0, 0).
             legenda.item(Sprites.fantasmaInteligente(22), "Fantasma esperto",
                     "fixo em " + posicaoFantasma() + "; caça os pacmans durante a partida");
@@ -111,7 +141,7 @@ public class CenarioScreen implements Tela {
         Button limpar = Ui.secundario("Limpar tudo", 50);
         limpar.setGraphic(Icones.xis(Tema.TEXTO));
         limpar.setOnAction(e -> limparTudo());
-        Button comecar = Ui.primario("COMEÇAR SIMULAÇÃO", "btn-verde", 64);
+        Button comecar = Ui.primario(pvp ? "COMEÇAR PARTIDA" : "COMEÇAR SIMULAÇÃO", "btn-verde", 64);
         comecar.setStyle("-fx-font-size: 14px;");
         comecar.setGraphic(Icones.play(Tema.FUNDO, 14));
         comecar.setOnAction(e -> {
@@ -139,6 +169,10 @@ public class CenarioScreen implements Tela {
         Iterator<ObstaculoColocado> it = config.getObstaculos().iterator();
         while (it.hasNext()) {
             ObstaculoColocado o = it.next();
+            if (pvp && o.tipo() != TipoObstaculo.ROCHA) {
+                it.remove();
+                continue;
+            }
             try {
                 tabuleiro.adicionarObstaculo(criar(o.tipo(), o.cor()), o.x(), o.y());
                 if (o.tipo() == TipoObstaculo.FANTASMA) {
@@ -182,6 +216,9 @@ public class CenarioScreen implements Tela {
     }
 
     private boolean casaDoFantasma(int x, int y) {
+        if (pvp) {
+            return x == FantasmaAleatorio.X_INICIAL && y == FantasmaAleatorio.Y_INICIAL;
+        }
         return poder && x == FantasmaInteligente.X_INICIAL && y == FantasmaInteligente.Y_INICIAL;
     }
 
@@ -221,6 +258,7 @@ public class CenarioScreen implements Tela {
         boolean livre = tabuleiro.getObstaculo(x, y) == null
                 && !casaDoFantasma(x, y)
                 && !(x == 0 && y == 0)
+                && !(pvp && x == Tabuleiro.TAMANHO - 1 && y == Tabuleiro.TAMANHO - 1)
                 && !(x == tabuleiro.getXAlimento() && y == tabuleiro.getYAlimento())
                 && !(ferramenta == TipoObstaculo.ROCHA && tabuleiro.fechariaCaminhoAoAlimento(x, y));
         if (!livre) {

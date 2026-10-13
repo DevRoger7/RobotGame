@@ -44,7 +44,7 @@ public class MenuScreen implements Tela {
                     "2 ROBÔS · COM OBSTÁCULOS"},
             {"PAC-MAN COM PODER", "Três pacmans contra um fantasma caçador. Com a bolinha de poder, eles comem fantasmas.",
                     "3 ROBÔS · COM PODER"},
-            {"PVP", "Setas contra W A S D, sem fruta. Quem pegar a bolinha de poder elimina o outro.",
+            {"PVP", "Setas contra W A S D, sem fruta e com rochas. Quem pegar a bolinha de poder elimina o outro.",
                     "2 JOGADORES · SEM FRUTA"}
     };
 
@@ -282,7 +282,8 @@ public class MenuScreen implements Tela {
                 linhaJogador(CoresPacman.pacman(ativas[1]), "Jogador 2",
                         new KeyCap("A", true), new KeyCap("W", true), new KeyCap("S", true), new KeyCap("D", true)));
         Label regras = Ui.label("Não há fruta. A bolinha de poder aparece sozinha: quem pegar elimina o outro "
-                + "jogador ao encostar nele. O fantasma anda ao acaso e elimina quem estiver sem poder.",
+                + "jogador ao encostar nele. O fantasma anda ao acaso e elimina quem estiver sem poder. "
+                + "Antes de começar, você escolhe onde ficam as rochas.",
                 13.5, "muted");
         regras.setWrapText(true);
         ajudaPvp.getChildren().add(regras);

@@ -147,3 +147,4 @@ decisões tomadas durante a implementação (seção 9 do plano).
 - Novo evento `EventoPartida.Tipo.PACMAN_ELIMINADO` (robo = vítima). Diário e placares chamam os pacmans de "Jogador 1/2".
 - Menu: os 6 cartões de modo só cabem com `.mode-desc` em 13.5 px; no PvP o bloco "onde fica a fruta" dá lugar a "como jogar".
 - Posições iniciais no PvP: Jogador 1 em (3,3) (`Robo(cor, x, y)`), Jogador 2 em (0,0); o fantasma aleatório começa em (0,3).
+- Rochas no PvP: o modo passa pela `CenarioScreen` (só a ferramenta de rocha; o aviso do Tabuleiro mostra por que uma casa foi recusada). Não é possível colocar rocha em (0,0), (3,3) nem na casa do fantasma, nem de modo que isole casas livres do tabuleiro (`Tabuleiro.fechariaCaminhoAoAlimento` sem fruta). Em `PartidaPvp`, bater na rocha devolve o pacman à casa anterior (evento ROCHA).

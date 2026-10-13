@@ -75,14 +75,29 @@ public class Tabuleiro {
         if (fantasmaInteligente != null && fantasmaInteligente.getX() == x && fantasmaInteligente.getY() == y) {
             throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada pelo fantasma inteligente.");
         }
+        if (fantasmaAleatorio != null && fantasmaAleatorio.getX() == x && fantasmaAleatorio.getY() == y) {
+            throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada pelo fantasma aleatório.");
+        }
+        // Sem fruta (PvP), o jogador 1 nasce no canto oposto a (0,0).
+        if (!temAlimento() && x == TAMANHO - 1 && y == TAMANHO - 1) {
+            throw new IllegalArgumentException("Não é possível colocar obstáculo em (" + x + "," + y
+                    + "), início do jogador 1.");
+        }
         if (o.bloqueiaPassagem() && fechariaCaminhoAoAlimento(x, y)) {
-            throw new IllegalArgumentException("Uma rocha em (" + x + "," + y + ") fecharia o caminho até o alimento: "
-                    + "os robôs ficariam presos e a partida nunca terminaria.");
+            throw new IllegalArgumentException(temAlimento()
+                    ? "Uma rocha em (" + x + "," + y + ") fecharia o caminho até o alimento: "
+                            + "os robôs ficariam presos e a partida nunca terminaria."
+                    : "Uma rocha em (" + x + "," + y + ") isolaria uma parte do tabuleiro.");
         }
         obstaculos[x][y] = o;
     }
 
+    // Com alimento: true se uma rocha em (x,y) fecharia o caminho de (0,0) até ele.
+    // Sem alimento (PvP): true se ela deixaria alguma casa livre inalcançável a partir de (0,0).
     public boolean fechariaCaminhoAoAlimento(int x, int y) {
+        if (!temAlimento()) {
+            return isolariaCasasLivres(x, y);
+        }
         boolean[][] visitada = new boolean[TAMANHO][TAMANHO];
         Deque<int[]> fila = new ArrayDeque<>();
         visitada[0][0] = true;
@@ -108,6 +123,43 @@ public class Tabuleiro {
             }
         }
         return true;
+    }
+
+    private boolean isolariaCasasLivres(int x, int y) {
+        boolean[][] visitada = new boolean[TAMANHO][TAMANHO];
+        Deque<int[]> fila = new ArrayDeque<>();
+        visitada[0][0] = true;
+        fila.add(new int[]{0, 0});
+        int alcancadas = 0;
+        int[][] passos = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+        while (!fila.isEmpty()) {
+            int[] atual = fila.poll();
+            alcancadas++;
+            for (int[] passo : passos) {
+                int nx = atual[0] + passo[0];
+                int ny = atual[1] + passo[1];
+                if (!dentroDosLimites(nx, ny) || visitada[nx][ny] || (nx == x && ny == y)) {
+                    continue;
+                }
+                if (obstaculos[nx][ny] != null && obstaculos[nx][ny].bloqueiaPassagem()) {
+                    continue;
+                }
+                visitada[nx][ny] = true;
+                fila.add(new int[]{nx, ny});
+            }
+        }
+
+        int livres = 0;
+        for (int i = 0; i < TAMANHO; i++) {
+            for (int j = 0; j < TAMANHO; j++) {
+                boolean bloqueada = (i == x && j == y) || (obstaculos[i][j] != null && obstaculos[i][j].bloqueiaPassagem());
+                if (!bloqueada) {
+                    livres++;
+                }
+            }
+        }
+        return alcancadas < livres;
     }
 
     public Obstaculo getObstaculo(int x, int y) {
