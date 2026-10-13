@@ -43,6 +43,7 @@ public class AppHeader extends HBox {
             case CORRIDA -> "MODO 2 · CORRIDA";
             case NORMAL_X_INTELIGENTE -> "MODO 3 · NORMAL × INTELIGENTE";
             case COM_OBSTACULOS -> "MODO 4 · OBSTÁCULOS";
+            case PACMAN_PODER -> "MODO 5 · PAC-MAN COM PODER";
         };
     }
 }

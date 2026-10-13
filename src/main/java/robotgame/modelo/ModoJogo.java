@@ -13,6 +13,9 @@ public enum ModoJogo {
             true, false),
     COM_OBSTACULOS("Normal x inteligente com obstáculos",
             "Você posiciona fantasmas e rochas no tabuleiro. Fantasma pega o pacman; rocha o faz voltar.",
+            true, true),
+    PACMAN_PODER("Pac-Man com poder (3 robôs)",
+            "Três pacmans (normal, inteligente e super) contra um fantasma que caça do mais inteligente ao mais burro. Quem pegar a bolinha de poder pode comer fantasmas.",
             true, true);
 
     private final String nome;
@@ -36,6 +39,9 @@ public enum ModoJogo {
     }
 
     public int getQuantidadeRobos() {
+        if (this == PACMAN_PODER) {
+            return 3;
+        }
         return isManual() ? 1 : 2;
     }
 

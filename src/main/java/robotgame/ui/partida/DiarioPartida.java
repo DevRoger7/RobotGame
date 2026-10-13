@@ -49,10 +49,18 @@ public class DiarioPartida {
                     ? "O fantasma " + f.getCor() + " sumiu do tabuleiro depois da explosão."
                     : "A bomba sumiu do tabuleiro depois da explosão.";
             case ACHOU_ALIMENTO -> quem + " chegou à fruta em " + pos(e.x(), e.y()) + ".";
+            case PODER_APARECEU -> "Uma bolinha de poder apareceu em " + pos(e.x(), e.y()) + ".";
+            case PODER_SUMIU -> "A bolinha de poder sumiu de " + pos(e.x(), e.y()) + ".";
+            case PEGOU_PODER -> quem + " pegou a bolinha de poder em " + pos(e.x(), e.y()) + ".";
+            case PODER_ACABOU -> "O poder de " + quem + " acabou.";
+            case FANTASMA_MOVEU -> "O fantasma foi para " + pos(e.x(), e.y()) + ".";
+            case COMEU_FANTASMA -> quem + " comeu o fantasma em " + pos(e.x(), e.y()) + ".";
+            case COMEU_FANTASMA_BURRO -> quem + " comeu um fantasma burro em " + pos(e.x(), e.y()) + ".";
+            case ELIMINADO_PELO_FANTASMA -> quem + " foi pego pelo fantasma em " + pos(e.x(), e.y()) + ".";
         };
         Color cor = e.tipo() == EventoPartida.Tipo.FANTASMA_SUMIU && e.obstaculo() instanceof Fantasma f
                 ? CoresPacman.fantasma(f.getCor())
-                : CoresPacman.pacman(e.robo().getCor());
+                : e.robo() == null ? Tema.TEXTO_SECUNDARIO : CoresPacman.pacman(e.robo().getCor());
         adicionar(cor, texto, e);
     }
 

@@ -10,6 +10,8 @@ public class Tabuleiro {
     private final int xAlimento;
     private final int yAlimento;
     private final Obstaculo[][] obstaculos = new Obstaculo[TAMANHO][TAMANHO];
+    private ItemPoder itemPoder;
+    private FantasmaInteligente fantasmaInteligente;
 
     public Tabuleiro(int xAlimento, int yAlimento) {
         if (!dentroDosLimites(xAlimento, yAlimento)) {
@@ -24,6 +26,10 @@ public class Tabuleiro {
 
     public static boolean dentroDosLimites(int x, int y) {
         return x >= 0 && x < TAMANHO && y >= 0 && y < TAMANHO;
+    }
+
+    public int getTamanho() {
+        return TAMANHO;
     }
 
     public int getXAlimento() {
@@ -50,6 +56,9 @@ public class Tabuleiro {
         }
         if (obstaculos[x][y] != null) {
             throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada por outro obstáculo.");
+        }
+        if (fantasmaInteligente != null && fantasmaInteligente.getX() == x && fantasmaInteligente.getY() == y) {
+            throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada pelo fantasma inteligente.");
         }
         if (o.bloqueiaPassagem() && fechariaCaminhoAoAlimento(x, y)) {
             throw new IllegalArgumentException("Uma rocha em (" + x + "," + y + ") fecharia o caminho até o alimento: "
@@ -92,5 +101,40 @@ public class Tabuleiro {
 
     public void removerObstaculo(int x, int y) {
         obstaculos[x][y] = null;
+    }
+
+    public ItemPoder getItemPoder() {
+        return itemPoder;
+    }
+
+    public void setItemPoder(ItemPoder itemPoder) {
+        this.itemPoder = itemPoder;
+    }
+
+    public void removerItemPoder() {
+        itemPoder = null;
+    }
+
+    public FantasmaInteligente getFantasmaInteligente() {
+        return fantasmaInteligente;
+    }
+
+    public void setFantasmaInteligente(FantasmaInteligente f) {
+        int x = f.getX();
+        int y = f.getY();
+        if (!dentroDosLimites(x, y)) {
+            throw new IllegalArgumentException("Posição (" + x + "," + y + ") fora do tabuleiro (use 0 a " + (TAMANHO - 1) + ").");
+        }
+        if (obstaculos[x][y] != null) {
+            throw new IllegalArgumentException("A posição (" + x + "," + y + ") já está ocupada por um obstáculo.");
+        }
+        if (x == xAlimento && y == yAlimento) {
+            throw new IllegalArgumentException("Não é possível colocar o fantasma inteligente na posição do alimento.");
+        }
+        this.fantasmaInteligente = f;
+    }
+
+    public void removerFantasmaInteligente() {
+        fantasmaInteligente = null;
     }
 }

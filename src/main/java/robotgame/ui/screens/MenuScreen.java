@@ -89,7 +89,8 @@ public class MenuScreen implements Tela {
         NeonCard cartaoModos = new NeonCard("1 · ESCOLHA O MODO");
         cartaoModos.setSpacing(16);
         ModoJogo[] modos = ModoJogo.values();
-        for (int i = 0; i < modos.length; i++) {
+        // O card do modo 5 entra quando a UI do Pac-Man com poder for feita.
+        for (int i = 0; i < MODOS.length; i++) {
             ModoJogo modo = modos[i];
             ModeCard card = new ModeCard(i + 1, MODOS[i][0], MODOS[i][1], MODOS[i][2], () -> escolherModo(modo));
             VBox.setVgrow(card, Priority.ALWAYS);

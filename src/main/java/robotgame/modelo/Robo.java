@@ -1,5 +1,6 @@
 package robotgame.modelo;
 
+import java.util.Random;
 import java.util.function.Consumer;
 
 import robotgame.excecao.MovimentoInvalidoException;
@@ -15,6 +16,7 @@ public class Robo {
     private int movimentosValidos;
     private int movimentosInvalidos;
     private Consumer<EventoPartida> ouvinteMovimentoInvalido;
+    private Poder poder;
 
     public Robo(String cor) {
         this.cor = cor;
@@ -51,6 +53,27 @@ public class Robo {
 
     public int getTotalMovimentos() {
         return movimentosValidos + movimentosInvalidos;
+    }
+
+    public boolean isComPoder() {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public void darPoder() {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public void gastarTurnoDePoder() {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public void perderPoder() {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    public String decidirDirecao(Tabuleiro t, Random random) {
+        String[] direcoes = {"up", "down", "right", "left"};
+        return direcoes[random.nextInt(direcoes.length)];
     }
 
     public void setOuvinteMovimentoInvalido(Consumer<EventoPartida> ouvinte) {
