@@ -38,7 +38,12 @@ public class DiarioPartida {
         adicionar(Tema.TEXTO_SECUNDARIO, "Partida iniciada. Fruta em " + pos(xFruta, yFruta) + ".", null);
     }
 
+    // Em PODER_APARECEU, PODER_SUMIU e FANTASMA_MOVEU o robo do evento é null.
     public void registrar(EventoPartida e) {
+        // O fantasma esperto anda toda rodada: registrar isso só encheria o diário.
+        if (e.tipo() == EventoPartida.Tipo.FANTASMA_MOVEU) {
+            return;
+        }
         String quem = nome(e.robo());
         String texto = switch (e.tipo()) {
             case MOVEU -> quem + " andou para " + direcao(e.direcao()) + " e está em " + pos(e.x(), e.y()) + ".";
@@ -49,14 +54,14 @@ public class DiarioPartida {
                     ? "O fantasma " + f.getCor() + " sumiu do tabuleiro depois da explosão."
                     : "A bomba sumiu do tabuleiro depois da explosão.";
             case ACHOU_ALIMENTO -> quem + " chegou à fruta em " + pos(e.x(), e.y()) + ".";
-            case PODER_APARECEU -> "Uma bolinha de poder apareceu em " + pos(e.x(), e.y()) + ".";
-            case PODER_SUMIU -> "A bolinha de poder sumiu de " + pos(e.x(), e.y()) + ".";
-            case PEGOU_PODER -> quem + " pegou a bolinha de poder em " + pos(e.x(), e.y()) + ".";
-            case PODER_ACABOU -> "O poder de " + quem + " acabou.";
-            case FANTASMA_MOVEU -> "O fantasma foi para " + pos(e.x(), e.y()) + ".";
-            case COMEU_FANTASMA -> quem + " comeu o fantasma em " + pos(e.x(), e.y()) + ".";
-            case COMEU_FANTASMA_BURRO -> quem + " comeu um fantasma burro em " + pos(e.x(), e.y()) + ".";
-            case ELIMINADO_PELO_FANTASMA -> quem + " foi pego pelo fantasma em " + pos(e.x(), e.y()) + ".";
+            case PODER_APARECEU -> "Bolinha de poder apareceu em " + pos(e.x(), e.y()) + ".";
+            case PODER_SUMIU -> "A bolinha de poder sumiu.";
+            case PEGOU_PODER -> "Pacman " + e.robo().getCor() + " pegou o poder!";
+            case PODER_ACABOU -> "O poder do pacman " + e.robo().getCor() + " acabou.";
+            case COMEU_FANTASMA -> "Pacman " + e.robo().getCor() + " comeu o fantasma!";
+            case COMEU_FANTASMA_BURRO -> "Pacman " + e.robo().getCor() + " comeu um fantasma burro.";
+            case ELIMINADO_PELO_FANTASMA -> "O fantasma pegou o pacman " + e.robo().getCor() + ".";
+            case FANTASMA_MOVEU -> throw new IllegalStateException("FANTASMA_MOVEU não vai para o diário.");
         };
         Color cor = e.tipo() == EventoPartida.Tipo.FANTASMA_SUMIU && e.obstaculo() instanceof Fantasma f
                 ? CoresPacman.fantasma(f.getCor())
