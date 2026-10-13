@@ -40,24 +40,27 @@ public class ColorSwatchRow extends HBox {
         }
     }
 
-    public void mostrar(String selecionada, int numeroSelecionado, String outra) {
+    // cores[i] é a cor do pacman i+1; editando é o número do pacman em edição (0 = um pacman só, sem números).
+    public void mostrar(int editando, String... cores) {
         botoes.forEach((nome, botao) -> {
             botao.getStyleClass().removeAll("selecionado", "outro");
             Label numero = numeros.get(nome);
             numero.setVisible(false);
-            if (nome.equals(selecionada)) {
-                botao.getStyleClass().add("selecionado");
-                if (numeroSelecionado > 0) {
-                    numero.setText(String.valueOf(numeroSelecionado));
-                    numero.setStyle(numero.getStyle().replaceAll("-fx-background-color: [^;]+;",
-                            "-fx-background-color: " + Tema.hex(Tema.AMARELO) + ";"));
-                    numero.setVisible(true);
+            int dono = 0;
+            for (int i = 0; i < cores.length; i++) {
+                if (nome.equals(cores[i]) && (dono == 0 || i + 1 == Math.max(editando, 1))) {
+                    dono = i + 1;
                 }
-            } else if (nome.equals(outra)) {
-                botao.getStyleClass().add("outro");
-                numero.setText(String.valueOf(numeroSelecionado == 1 ? 2 : 1));
+            }
+            if (dono == 0) {
+                return;
+            }
+            boolean selecionado = dono == Math.max(editando, 1);
+            botao.getStyleClass().add(selecionado ? "selecionado" : "outro");
+            if (editando > 0) {
+                numero.setText(String.valueOf(dono));
                 numero.setStyle(numero.getStyle().replaceAll("-fx-background-color: [^;]+;",
-                        "-fx-background-color: " + Tema.hex(Tema.TEXTO_SECUNDARIO) + ";"));
+                        "-fx-background-color: " + Tema.hex(selecionado ? Tema.AMARELO : Tema.TEXTO_SECUNDARIO) + ";"));
                 numero.setVisible(true);
             }
         });

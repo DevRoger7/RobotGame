@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Random;
 
 import robotgame.modelo.Fantasma;
+import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Robo;
 import robotgame.modelo.RoboInteligente;
+import robotgame.modelo.RoboSuperInteligente;
 import robotgame.modelo.Rocha;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.components.Sprites;
@@ -22,6 +24,7 @@ public class ConfiguracaoPartida {
     private ModoJogo modo = ModoJogo.MANUAL;
     private String cor1 = "amarelo";
     private String cor2 = "vermelho";
+    private String cor3 = "verde";
     private int xFruta = 0;
     private int yFruta = Tabuleiro.TAMANHO - 1;
     private final int indiceFruta = new Random().nextInt(Sprites.FRUTAS.length);
@@ -49,6 +52,14 @@ public class ConfiguracaoPartida {
 
     public void setCor2(String cor2) {
         this.cor2 = cor2;
+    }
+
+    public String getCor3() {
+        return cor3;
+    }
+
+    public void setCor3(String cor3) {
+        this.cor3 = cor3;
     }
 
     public int getXFruta() {
@@ -80,12 +91,18 @@ public class ConfiguracaoPartida {
                         o.tipo() == TipoObstaculo.FANTASMA ? new Fantasma(o.cor()) : new Rocha(), o.x(), o.y());
             }
         }
+        if (modo == ModoJogo.PACMAN_PODER) {
+            tabuleiro.setFantasmaInteligente(new FantasmaInteligente());
+        }
         return tabuleiro;
     }
 
     public Robo[] criarRobos() {
         if (modo.getQuantidadeRobos() == 1) {
             return new Robo[]{new Robo(cor1)};
+        }
+        if (modo == ModoJogo.PACMAN_PODER) {
+            return new Robo[]{new Robo(cor1), new RoboInteligente(cor2), new RoboSuperInteligente(cor3)};
         }
         return new Robo[]{
                 new Robo(cor1),

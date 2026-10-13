@@ -1,6 +1,7 @@
 package robotgame.ui.screens;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javafx.geometry.Insets;
@@ -15,6 +16,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 
+import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.components.ColorSwatchRow;
@@ -38,7 +40,9 @@ public class MenuScreen implements Tela {
                     "Um robô comum e um esperto, que evita repetir o erro. Termina quando os dois acham a fruta.",
                     "2 ROBÔS · AUTOMÁTICO"},
             {"OBSTÁCULOS", "Você espalha fantasmas e rochas. O fantasma elimina o robô; a rocha o faz voltar.",
-                    "2 ROBÔS · COM OBSTÁCULOS"}
+                    "2 ROBÔS · COM OBSTÁCULOS"},
+            {"PAC-MAN COM PODER", "Três pacmans contra um fantasma caçador. Com a bolinha de poder, eles comem fantasmas.",
+                    "3 ROBÔS · COM PODER"}
     };
 
     private final Navegador navegador;
@@ -50,6 +54,7 @@ public class MenuScreen implements Tela {
     private final HBox abas;
     private final Label aba1 = Ui.label("PACMAN 1", "aba");
     private final Label aba2 = Ui.label("PACMAN 2", "aba");
+    private final Label aba3 = Ui.label("PACMAN 3", "aba");
     private final MiniBoardPicker mini;
     private final StatTile tileX = new StatTile("X (0–3)", "0", 26);
     private final StatTile tileY = new StatTile("Y (0–3)", "3", 26);
@@ -87,10 +92,9 @@ public class MenuScreen implements Tela {
         Ui.tamanhoFixo(cartaoTitulo, 1232, 132);
 
         NeonCard cartaoModos = new NeonCard("1 · ESCOLHA O MODO");
-        cartaoModos.setSpacing(16);
+        cartaoModos.setSpacing(10);
         ModoJogo[] modos = ModoJogo.values();
-        // O card do modo 5 entra quando a UI do Pac-Man com poder for feita.
-        for (int i = 0; i < MODOS.length; i++) {
+        for (int i = 0; i < modos.length; i++) {
             ModoJogo modo = modos[i];
             ModeCard card = new ModeCard(i + 1, MODOS[i][0], MODOS[i][1], MODOS[i][2], () -> escolherModo(modo));
             VBox.setVgrow(card, Priority.ALWAYS);
@@ -104,7 +108,9 @@ public class MenuScreen implements Tela {
         cores = new ColorSwatchRow(42, this::escolherCor);
         aba1.setOnMouseClicked(e -> editar(1));
         aba2.setOnMouseClicked(e -> editar(2));
-        abas = new HBox(6, aba1, aba2);
+        aba3.setOnMouseClicked(e -> editar(3));
+        aba3.managedProperty().bind(aba3.visibleProperty());
+        abas = new HBox(6, aba1, aba2, aba3);
         HBox cabecalhoCor = Ui.linha(0, Ui.label("COR DO PACMAN", "section-label"), Ui.espaco(), abas);
         HBox linhaCores = Ui.linha(12, cores, nomeCor);
 
@@ -162,9 +168,10 @@ public class MenuScreen implements Tela {
         for (int i = 0; i < cartoesModo.size(); i++) {
             cartoesModo.get(i).setSelecionado(ModoJogo.values()[i] == modo);
         }
-        boolean dois = modo.getQuantidadeRobos() == 2;
-        abas.setVisible(dois);
-        if (!dois) {
+        int quantidade = modo.getQuantidadeRobos();
+        abas.setVisible(quantidade > 1);
+        aba3.setVisible(quantidade == 3);
+        if (editando > quantidade) {
             editando = 1;
         }
         erro.setText("");
@@ -177,56 +184,77 @@ public class MenuScreen implements Tela {
     }
 
     private void escolherCor(String cor) {
-        if (editando == 1) {
-            config.setCor1(cor);
-        } else {
-            config.setCor2(cor);
+        switch (editando) {
+            case 1 -> config.setCor1(cor);
+            case 2 -> config.setCor2(cor);
+            default -> config.setCor3(cor);
         }
-        erro.setText(coresIguais() ? "Escolha cores diferentes para os dois pacmans." : "");
+        erro.setText(coresIguais() ? mensagemCoresIguais() : "");
         atualizar();
     }
 
+    // Cores dos pacmans do modo atual, na ordem das abas.
+    private String[] coresAtivas() {
+        String[] todas = {config.getCor1(), config.getCor2(), config.getCor3()};
+        return Arrays.copyOf(todas, config.getModo().getQuantidadeRobos());
+    }
+
     private boolean coresIguais() {
-        return config.getModo().getQuantidadeRobos() == 2 && config.getCor1().equals(config.getCor2());
+        String[] ativas = coresAtivas();
+        return Arrays.stream(ativas).distinct().count() < ativas.length;
+    }
+
+    private String mensagemCoresIguais() {
+        return config.getModo().getQuantidadeRobos() == 3
+                ? "Escolha cores diferentes para os três pacmans."
+                : "Escolha cores diferentes para os dois pacmans.";
+    }
+
+    // Lança IllegalArgumentException com a mensagem para o jogador se a fruta não puder ficar em (x,y).
+    private void validarFruta(int x, int y) {
+        new Tabuleiro(x, y);
+        if (config.getModo() == ModoJogo.PACMAN_PODER
+                && x == FantasmaInteligente.X_INICIAL && y == FantasmaInteligente.Y_INICIAL) {
+            throw new IllegalArgumentException("No modo Pac-Man com poder, a fruta não pode ficar em ("
+                    + x + "," + y + "), posição inicial do fantasma inteligente.");
+        }
     }
 
     private void escolherCasa(int x, int y) {
         try {
-            new Tabuleiro(x, y);
+            validarFruta(x, y);
         } catch (IllegalArgumentException e) {
             erro.setText(e.getMessage());
             return;
         }
         config.setFruta(x, y);
-        erro.setText(coresIguais() ? "Escolha cores diferentes para os dois pacmans." : "");
+        erro.setText(coresIguais() ? mensagemCoresIguais() : "");
         mini.setFruta(x, y, Sprites.fruta(config.getIndiceFruta(), 40));
         atualizar();
     }
 
     private void atualizar() {
-        boolean dois = config.getModo().getQuantidadeRobos() == 2;
-        String atual = editando == 1 ? config.getCor1() : config.getCor2();
-        cores.mostrar(atual, dois ? editando : 0, dois ? (editando == 1 ? config.getCor2() : config.getCor1()) : null);
+        String[] ativas = coresAtivas();
+        String atual = ativas[editando - 1];
+        cores.mostrar(ativas.length > 1 ? editando : 0, ativas);
         nomeCor.setText(CoresPacman.rotulo(atual));
-        aba1.getStyleClass().remove("ativa");
-        aba2.getStyleClass().remove("ativa");
-        (editando == 1 ? aba1 : aba2).getStyleClass().add("ativa");
+        Label[] todasAbas = {aba1, aba2, aba3};
+        for (Label aba : todasAbas) {
+            aba.getStyleClass().remove("ativa");
+        }
+        todasAbas[editando - 1].getStyleClass().add("ativa");
         tileX.setValor(String.valueOf(config.getXFruta()));
         tileY.setValor(String.valueOf(config.getYFruta()));
-        if (dois) {
-            mini.mostrarPacmans(config.getCor1(), config.getCor2());
-        } else {
-            mini.mostrarPacmans(config.getCor1());
-        }
+        mini.mostrarPacmans(ativas);
     }
 
     private void iniciar() {
         if (coresIguais()) {
-            erro.setText("Escolha cores diferentes para os dois pacmans.");
+            erro.setText(mensagemCoresIguais());
             return;
         }
         try {
-            new Tabuleiro(config.getXFruta(), config.getYFruta());
+            validarFruta(config.getXFruta(), config.getYFruta());
         } catch (IllegalArgumentException e) {
             erro.setText(e.getMessage());
             return;
