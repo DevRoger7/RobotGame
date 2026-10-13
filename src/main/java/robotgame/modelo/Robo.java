@@ -78,6 +78,18 @@ public class Robo {
     }
 
     public String decidirDirecao(Tabuleiro t, Random random) {
+        FantasmaInteligente fantasma = t.getFantasmaInteligente();
+        if (isComPoder() && fantasma != null) {
+            // Com poder, o pacman caça o fantasma: desvia de rochas, mas passa por cima de fantasmas burros.
+            String direcao = BuscaCaminho.proximaDirecao(t, x, y, fantasma.getX(), fantasma.getY(), true);
+            if (direcao != null) {
+                return direcao;
+            }
+        }
+        return direcaoAleatoria(random);
+    }
+
+    protected String direcaoAleatoria(Random random) {
         String[] direcoes = {"up", "down", "right", "left"};
         return direcoes[random.nextInt(direcoes.length)];
     }
