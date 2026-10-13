@@ -56,19 +56,25 @@ public class Robo {
     }
 
     public boolean isComPoder() {
-        throw new UnsupportedOperationException("TODO");
+        return poder != null;
     }
 
     public void darPoder() {
-        throw new UnsupportedOperationException("TODO");
+        poder = new Poder();
     }
 
     public void gastarTurnoDePoder() {
-        throw new UnsupportedOperationException("TODO");
+        if (poder == null) {
+            return;
+        }
+        poder.gastarTurno();
+        if (poder.acabou()) {
+            poder = null;
+        }
     }
 
     public void perderPoder() {
-        throw new UnsupportedOperationException("TODO");
+        poder = null;
     }
 
     public String decidirDirecao(Tabuleiro t, Random random) {

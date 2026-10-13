@@ -4,18 +4,22 @@ public class Poder {
 
     public static final int DURACAO = 8;
 
+    private int turnosRestantes = DURACAO;
+
     public Poder() {
     }
 
     public int getTurnosRestantes() {
-        throw new UnsupportedOperationException("TODO");
+        return turnosRestantes;
     }
 
     public void gastarTurno() {
-        throw new UnsupportedOperationException("TODO");
+        if (turnosRestantes > 0) {
+            turnosRestantes--;
+        }
     }
 
     public boolean acabou() {
-        throw new UnsupportedOperationException("TODO");
+        return turnosRestantes == 0;
     }
 }
