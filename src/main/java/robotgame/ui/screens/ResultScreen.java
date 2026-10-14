@@ -19,6 +19,7 @@ import javafx.scene.paint.Color;
 
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.ModoJogo;
+import robotgame.modelo.PlacarPvp;
 import robotgame.modelo.Robo;
 import robotgame.modelo.RoboInteligente;
 import robotgame.modelo.RoboSuperInteligente;
@@ -55,6 +56,7 @@ public class ResultScreen implements Tela {
     private final ModoJogo modo;
     private final Robo[] robos;
     private final Sons sons;
+    private final PlacarPvp placar;
     private final DiaryList comoTerminou;
     private final Button botaoSom;
     private final VBox raiz;
@@ -71,6 +73,7 @@ public class ResultScreen implements Tela {
         this.modo = resultado.configuracao().getModo();
         this.robos = resultado.robos();
         this.sons = navegador.getSons();
+        this.placar = resultado.configuracao().getPlacarPvp();
         calcularTextos();
 
         Tabuleiro tabuleiro = resultado.tabuleiro();
@@ -116,7 +119,7 @@ public class ResultScreen implements Tela {
             String sub = modo.isManual() ? "você controlou"
                     : modo.isPvp() ? (i == 0 ? "usou as setas" : "usou W A S D") : tipo(r);
             if (modo == ModoJogo.PACMAN_PODER || modo.isPvp()) {
-                placares[i] = placarCompacto(r, nome, sub);
+                placares[i] = placarCompacto(i, nome, sub);
                 continue;
             }
             ScoreCard placar = new ScoreCard(CoresPacman.pacman(r.getCor()), nome, sub, 140, "VÁLIDOS", "INVÁLIDOS", "TOTAL");
@@ -134,10 +137,10 @@ public class ResultScreen implements Tela {
         LayoutJogo.crescer(cartaoFim);
         LayoutJogo.recortar(cartaoFim);
 
-        Button jogarDeNovo = Ui.primario("JOGAR DE NOVO", "btn-verde", 64);
+        Button jogarDeNovo = Ui.primario(textoBotaoPrincipal(), "btn-verde", 64);
         jogarDeNovo.setStyle("-fx-font-size: 14px;");
         jogarDeNovo.setGraphic(Icones.recomecar(Tema.FUNDO));
-        jogarDeNovo.setOnAction(e -> navegador.irParaJogo(resultado.configuracao()));
+        jogarDeNovo.setOnAction(e -> jogarDeNovo());
         Button voltar = Ui.secundario("Voltar ao menu", 52);
         voltar.setGraphic(Icones.chevronEsquerda(Tema.TEXTO));
         voltar.setOnAction(e -> navegador.irParaMenu(resultado.configuracao()));
@@ -169,6 +172,21 @@ public class ResultScreen implements Tela {
     public void aoSair() {
         comoTerminou.desligar();
         sons.pararTudo();
+    }
+
+    // No PvP em série o botão principal continua a série ou, se ela já foi decidida, começa outra.
+    private String textoBotaoPrincipal() {
+        if (!modo.isPvp() || placar.getFormato().isLivre()) {
+            return "JOGAR DE NOVO";
+        }
+        return placar.isDecidida() ? "NOVA SÉRIE" : "PRÓXIMA PARTIDA";
+    }
+
+    private void jogarDeNovo() {
+        if (modo.isPvp() && placar.isDecidida()) {
+            resultado.configuracao().comecarSeriePvp();
+        }
+        navegador.irParaJogo(resultado.configuracao());
     }
 
     private void alternarSom() {
@@ -284,7 +302,12 @@ public class ResultScreen implements Tela {
             }
         }
         destaque = vivos == 1 ? vivo : null;
-        if (destaque != null) {
+        if (destaque != null && placar.isDecidida()) {
+            // A série só se fecha com uma vitória, então o campeão é o vencedor desta partida.
+            String nome = diario.nome(destaque);
+            titulo = nome.toUpperCase() + " VENCEU A SÉRIE!";
+            faixa = nome + " venceu a " + placar.getFormato().toString().toLowerCase() + "!";
+        } else if (destaque != null) {
             String nome = diario.nome(destaque);
             titulo = nome.toUpperCase() + " VENCEU!";
             faixa = nome + " eliminou o rival!";
@@ -292,8 +315,18 @@ public class ResultScreen implements Tela {
             titulo = "EMPATE!";
             faixa = vivos == 0 ? "Os dois foram eliminados" : "Tempo esgotado";
         }
-        detalhe = resultado.mensagem();
-        rodape = resultado.mensagem();
+        detalhe = resultado.mensagem() + " " + textoPlacar();
+        rodape = resultado.mensagem() + " " + textoPlacar();
+    }
+
+    // "Placar: 2 × 1." ou, com empates, "Placar: 2 × 1 (1 empate)."
+    private String textoPlacar() {
+        String texto = "Placar: " + placar.getVitorias(0) + " × " + placar.getVitorias(1);
+        int empates = placar.getEmpates();
+        if (empates > 0) {
+            texto += " (" + empates + (empates == 1 ? " empate)" : " empates)");
+        }
+        return texto + ".";
     }
 
     // Os textos vêm do resultado da SimulacaoPoder (getResultado()), que chega em resultado.mensagem().
@@ -328,14 +361,18 @@ public class ResultScreen implements Tela {
     }
 
     // Com 3 cartões lado a lado o ScoreCard não cabe: o status vai numa linha própria, sem a coluna TOTAL.
-    private Node placarCompacto(Robo r, String nome, String sub) {
+    private Node placarCompacto(int i, String nome, String sub) {
+        Robo r = robos[i];
         Color cor = CoresPacman.pacman(r.getCor());
         Label titulo = Ui.label(nome, 10.5, "pixel");
         titulo.setTextFill(cor);
         HBox topo = Ui.linha(8, Sprites.pacman(cor, 26), new VBox(4, titulo, Ui.label(sub, 12.5, "muted")));
         HBox status = new HBox(new Chip(situacao(r), corSituacao(r)));
-        HBox valores = Ui.linhaIgual(6, new StatTile("VÁLIDOS", String.valueOf(r.getMovimentosValidos()), 13),
-                new StatTile("INVÁLIDOS", String.valueOf(r.getMovimentosInvalidos()), 13));
+        StatTile validos = new StatTile("VÁLIDOS", String.valueOf(r.getMovimentosValidos()), 13);
+        StatTile invalidos = new StatTile("INVÁLIDOS", String.valueOf(r.getMovimentosInvalidos()), 13);
+        HBox valores = modo.isPvp()
+                ? Ui.linhaIgual(6, new StatTile("VITÓRIAS", placar.textoVitorias(i), 13), validos, invalidos)
+                : Ui.linhaIgual(6, validos, invalidos);
         NeonCard cartao = new NeonCard(null, topo, status, Ui.espaco(), valores);
         cartao.setSpacing(8);
         cartao.setPadding(new Insets(12));

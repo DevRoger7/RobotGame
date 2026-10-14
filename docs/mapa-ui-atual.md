@@ -148,3 +148,16 @@ decisões tomadas durante a implementação (seção 9 do plano).
 - Menu: os 6 cartões de modo só cabem com `.mode-desc` em 13.5 px; no PvP o bloco "onde fica a fruta" dá lugar a "como jogar".
 - Posições iniciais no PvP: Jogador 1 em (3,3) (`Robo(cor, x, y)`), Jogador 2 em (0,0); o fantasma aleatório começa em (0,3).
 - Rochas no PvP: o modo passa pela `CenarioScreen` (só a ferramenta de rocha; o aviso do Tabuleiro mostra por que uma casa foi recusada). Não é possível colocar rocha em (0,0), (3,3) nem na casa do fantasma, nem de modo que isole casas livres do tabuleiro (`Tabuleiro.fechariaCaminhoAoAlimento` sem fruta). Em `PartidaPvp`, bater na rocha devolve o pacman à casa anterior (evento ROCHA).
+- Placar entre partidas: `modelo.PlacarPvp`, com o enum `PlacarPvp.Formato` (`LIVRE`, `MELHOR_DE_3`, `MELHOR_DE_5`).
+  Fica na `ConfiguracaoPartida` (`getFormatoPvp`/`getPlacarPvp`), que atravessa Menu → Cenário → Jogo → Fim → Jogo.
+  - A série encerra assim que alguém atinge a maioria (2 na melhor de 3, 3 na melhor de 5); 2 × 0 fecha a melhor de 3.
+    Registrar depois disso lança `IllegalStateException`.
+  - Empate não conta para a série: soma em `empates` e avança o número da partida (uma melhor de 3 pode ter mais de 3 partidas).
+  - Ciclo de vida: INICIAR no menu com o PvP chama `comecarSeriePvp()` (placar zerado); o botão principal da tela de fim
+    continua a mesma série; com a série decidida ele vira NOVA SÉRIE (zera o placar e mantém o formato); sair no meio de
+    uma partida não registra nada.
+  - O resultado é registrado em `GameScreen.finalizar` (`registrarNoPlacar`), uma vez por partida.
+  - Onde aparece: tile VITÓRIAS nos cartões do jogo e da tela de fim (`textoVitorias`: "2" no LIVRE, "1/2" em série);
+    "Partida N — prepare-se..." no início (`GameScreen.textoPreparo`); "Placar: X × Y" no detalhe e no rodapé da
+    `ResultScreen`, que também troca o título para "... VENCEU A SÉRIE!" e o botão para JOGAR DE NOVO / PRÓXIMA PARTIDA /
+    NOVA SÉRIE; abas PLACAR (LIVRE / MELHOR DE 3 / MELHOR DE 5) no menu, visíveis só no PvP.

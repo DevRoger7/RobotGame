@@ -18,6 +18,7 @@ import javafx.scene.shape.Circle;
 
 import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
+import robotgame.modelo.PlacarPvp;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.components.ColorSwatchRow;
 import robotgame.ui.components.Icones;
@@ -63,6 +64,8 @@ public class MenuScreen implements Tela {
     private final HBox linhaFruta;
     private final Label tituloPvp = Ui.label("COMO JOGAR O PVP", "section-label");
     private final VBox ajudaPvp = new VBox(12);
+    private final Label[] abasFormato = new Label[PlacarPvp.Formato.values().length];
+    private final HBox linhaFormato;
     private final StatTile tileX = new StatTile("X (0–3)", "0", 26);
     private final StatTile tileY = new StatTile("Y (0–3)", "3", 26);
     private final Label erro = Ui.label("", "erro");
@@ -121,6 +124,16 @@ public class MenuScreen implements Tela {
         HBox cabecalhoCor = Ui.linha(0, Ui.label("COR DO PACMAN", "section-label"), Ui.espaco(), abas);
         HBox linhaCores = Ui.linha(12, cores, nomeCor);
 
+        PlacarPvp.Formato[] formatos = PlacarPvp.Formato.values();
+        HBox grupoFormato = new HBox(6);
+        for (int i = 0; i < formatos.length; i++) {
+            PlacarPvp.Formato formato = formatos[i];
+            abasFormato[i] = Ui.label(formato.toString(), "aba");
+            abasFormato[i].setOnMouseClicked(e -> escolherFormato(formato));
+            grupoFormato.getChildren().add(abasFormato[i]);
+        }
+        linhaFormato = Ui.linha(0, Ui.label("PLACAR", "section-label"), Ui.espaco(), grupoFormato);
+
         mini = new MiniBoardPicker(this::escolherCasa);
         mini.setFruta(config.getXFruta(), config.getYFruta(), Sprites.fruta(config.getIndiceFruta(), 40));
         Label ajuda = Ui.label("Toque numa casa do mini-tabuleiro para mudar a fruta de lugar. "
@@ -143,8 +156,8 @@ public class MenuScreen implements Tela {
 
         NeonCard cartaoPartida = new NeonCard("2 · MONTE SUA PARTIDA",
                 cabecalhoCor, linhaCores, tituloFruta, linhaFruta, tituloPvp, ajudaPvp,
-                Ui.espaco(), iniciar);
-        for (var no : new javafx.scene.Node[]{tituloPvp, ajudaPvp}) {
+                linhaFormato, Ui.espaco(), iniciar);
+        for (var no : new javafx.scene.Node[]{tituloPvp, ajudaPvp, linhaFormato}) {
             no.managedProperty().bind(no.visibleProperty());
         }
         for (var no : new javafx.scene.Node[]{tituloFruta, linhaFruta}) {
@@ -186,6 +199,7 @@ public class MenuScreen implements Tela {
         linhaFruta.setVisible(!pvp);
         tituloPvp.setVisible(pvp);
         ajudaPvp.setVisible(pvp);
+        linhaFormato.setVisible(pvp);
         int quantidade = modo.getQuantidadeRobos();
         abas.setVisible(quantidade > 1);
         aba3.setVisible(quantidade == 3);
@@ -198,6 +212,11 @@ public class MenuScreen implements Tela {
 
     private void editar(int pacman) {
         editando = pacman;
+        atualizar();
+    }
+
+    private void escolherFormato(PlacarPvp.Formato formato) {
+        config.setFormatoPvp(formato);
         atualizar();
     }
 
@@ -264,6 +283,10 @@ public class MenuScreen implements Tela {
             aba.getStyleClass().remove("ativa");
         }
         todasAbas[editando - 1].getStyleClass().add("ativa");
+        for (Label aba : abasFormato) {
+            aba.getStyleClass().remove("ativa");
+        }
+        abasFormato[config.getFormatoPvp().ordinal()].getStyleClass().add("ativa");
         tileX.setValor(String.valueOf(config.getXFruta()));
         tileY.setValor(String.valueOf(config.getYFruta()));
         mini.mostrarPacmans(ativas);
@@ -283,7 +306,8 @@ public class MenuScreen implements Tela {
                         new KeyCap("A", true), new KeyCap("W", true), new KeyCap("S", true), new KeyCap("D", true)));
         Label regras = Ui.label("Não há fruta. A bolinha de poder aparece sozinha: quem pegar elimina o outro "
                 + "jogador ao encostar nele. O fantasma anda ao acaso e elimina quem estiver sem poder. "
-                + "Antes de começar, você escolhe onde ficam as rochas.",
+                + "Antes de começar, você escolhe onde ficam as rochas. "
+                + "Na melhor de 3 ou de 5, vence quem chegar primeiro a 2 ou 3 vitórias; empate não conta.",
                 13.5, "muted");
         regras.setWrapText(true);
         ajudaPvp.getChildren().add(regras);
@@ -307,6 +331,9 @@ public class MenuScreen implements Tela {
         } catch (IllegalArgumentException e) {
             erro.setText(e.getMessage());
             return;
+        }
+        if (config.getModo().isPvp()) {
+            config.comecarSeriePvp();
         }
         if (config.getModo().isComObstaculos()) {
             navegador.irParaCenario(config);

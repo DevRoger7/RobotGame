@@ -8,6 +8,7 @@ import robotgame.modelo.Fantasma;
 import robotgame.modelo.FantasmaAleatorio;
 import robotgame.modelo.FantasmaInteligente;
 import robotgame.modelo.ModoJogo;
+import robotgame.modelo.PlacarPvp;
 import robotgame.modelo.Robo;
 import robotgame.modelo.RoboInteligente;
 import robotgame.modelo.RoboSuperInteligente;
@@ -30,6 +31,8 @@ public class ConfiguracaoPartida {
     private int yFruta = Tabuleiro.TAMANHO - 1;
     private final int indiceFruta = new Random().nextInt(Sprites.FRUTAS.length);
     private final List<ObstaculoColocado> obstaculos = new ArrayList<>();
+    private PlacarPvp.Formato formatoPvp = PlacarPvp.Formato.LIVRE;
+    private PlacarPvp placarPvp = new PlacarPvp(formatoPvp);
 
     public ModoJogo getModo() {
         return modo;
@@ -82,6 +85,23 @@ public class ConfiguracaoPartida {
 
     public List<ObstaculoColocado> getObstaculos() {
         return obstaculos;
+    }
+
+    public PlacarPvp.Formato getFormatoPvp() {
+        return formatoPvp;
+    }
+
+    public void setFormatoPvp(PlacarPvp.Formato formatoPvp) {
+        this.formatoPvp = formatoPvp;
+    }
+
+    public PlacarPvp getPlacarPvp() {
+        return placarPvp;
+    }
+
+    // Zera o placar mantendo o formato escolhido.
+    public void comecarSeriePvp() {
+        placarPvp = new PlacarPvp(formatoPvp);
     }
 
     public Tabuleiro criarTabuleiro() {

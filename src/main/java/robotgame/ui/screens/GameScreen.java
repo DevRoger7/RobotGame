@@ -24,6 +24,7 @@ import robotgame.excecao.MovimentoInvalidoException;
 import robotgame.modelo.EventoPartida;
 import robotgame.modelo.ModoJogo;
 import robotgame.modelo.PartidaPvp;
+import robotgame.modelo.PlacarPvp;
 import robotgame.modelo.Robo;
 import robotgame.modelo.FantasmaAleatorio;
 import robotgame.modelo.FantasmaInteligente;
@@ -155,7 +156,7 @@ public class GameScreen implements Tela {
             placares = new ScoreCard[robos.length];
             for (int i = 0; i < robos.length; i++) {
                 placares[i] = new ScoreCard(cor(robos[i]), "JOGADOR " + (i + 1), TECLAS_PVP[i], 156,
-                        "VÁLIDOS", "INVÁLIDOS");
+                        "VITÓRIAS", "VÁLIDOS", "INVÁLIDOS");
                 placares[i].statusAbaixoDoNome();
             }
             dpad = null;
@@ -307,12 +308,24 @@ public class GameScreen implements Tela {
 
     private void comecarPartida() {
         congelado = true;
-        mensagem.mostrar("STATUS", "Prepare-se...", Tema.CIANO);
+        mensagem.mostrar("STATUS", textoPreparo(), Tema.CIANO);
         sons.tocarInicio(this::liberarPartida);
         limiteMusicaInicio = new PauseTransition(LIMITE_MUSICA_INICIO);
         limiteMusicaInicio.setOnFinished(e -> liberarPartida());
         limiteMusicaInicio.play();
         atualizarBotoes();
+    }
+
+    private String textoPreparo() {
+        if (!pvp) {
+            return "Prepare-se...";
+        }
+        PlacarPvp placar = config.getPlacarPvp();
+        String partida = "Partida " + placar.getPartidaAtual();
+        if (placar.getFormato().isLivre()) {
+            return partida + " — prepare-se...";
+        }
+        return partida + " · " + placar.getFormato().toString().toLowerCase() + " — prepare-se...";
     }
 
     private void liberarPartida() {
@@ -594,8 +607,8 @@ public class GameScreen implements Tela {
                 boolean achou = tabuleiro.alimentoEncontradoPor(r);
                 placares[i].setStatus(achou ? "ACHOU" : "JOGANDO", Tema.VERDE);
             } else if (pvp) {
-                placares[i].setValores(String.valueOf(r.getMovimentosValidos()),
-                        String.valueOf(r.getMovimentosInvalidos()));
+                placares[i].setValores(config.getPlacarPvp().textoVitorias(i),
+                        String.valueOf(r.getMovimentosValidos()), String.valueOf(r.getMovimentosInvalidos()));
                 if (!r.isAtivo()) {
                     placares[i].setStatus("ELIMINADO", Tema.VERMELHO);
                 } else if (r.isComPoder()) {
@@ -732,6 +745,10 @@ public class GameScreen implements Tela {
 
     private void finalizar(String resultado) {
         terminada = true;
+        if (pvp) {
+            registrarNoPlacar();
+            atualizarPainel(); // o tile VITÓRIAS mostra o ponto novo antes da tela de fim
+        }
         pararAnimacoes();
         sons.pararWakawaka();
         atualizarBotoes();
@@ -750,6 +767,15 @@ public class GameScreen implements Tela {
             navegador.irParaFim(new ResultadoPartida(config, tabuleiro, robos, diario, board.getExplosoes(), resultado));
         });
         esperaFim.play();
+    }
+
+    private void registrarNoPlacar() {
+        Robo vencedor = partidaPvp.getVencedor();
+        if (vencedor == null) {
+            config.getPlacarPvp().registrarEmpate();
+        } else {
+            config.getPlacarPvp().registrarVitoria(vencedor == robos[0] ? 0 : 1);
+        }
     }
 
     private String textoFim(String resultado) {
