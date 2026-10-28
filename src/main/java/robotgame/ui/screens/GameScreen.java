@@ -9,6 +9,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
@@ -32,6 +33,7 @@ import robotgame.modelo.RoboInteligente;
 import robotgame.modelo.RoboSuperInteligente;
 import robotgame.modelo.Simulacao;
 import robotgame.modelo.SimulacaoPoder;
+import robotgame.modelo.SimulacaoPoderConcorrente;
 import robotgame.modelo.Tabuleiro;
 import robotgame.ui.Sons;
 import robotgame.ui.components.BoardView;
@@ -97,6 +99,7 @@ public class GameScreen implements Tela {
     private Simulacao simulacao;
     // Usada só no modo PACMAN_PODER, no lugar de simulacao.
     private SimulacaoPoder simulacaoPoder;
+    private SimulacaoPoderConcorrente simulacaoPoderConcorrente;
     // Usada só no modo PVP.
     private PartidaPvp partidaPvp;
     private Timeline animacaoBoca;
@@ -122,7 +125,7 @@ public class GameScreen implements Tela {
         this.pvp = modo.isPvp();
         this.diario = new DiarioPartida(robos, modo);
         for (Robo r : robos) {
-            r.setOuvinteMovimentoInvalido(this::aoEvento);
+            r.setOuvinteMovimentoInvalido(this::receberEvento);
         }
 
         if (tabuleiro.temAlimento()) {
@@ -387,7 +390,11 @@ public class GameScreen implements Tela {
         }
         if (modo == ModoJogo.PACMAN_PODER) {
             simulacaoPoder = new SimulacaoPoder(tabuleiro, robos);
-            simulacaoPoder.setOuvinte(this::aoEvento);
+            simulacaoPoder.setOuvinte(this::receberEvento);
+            simulacaoPoderConcorrente = new SimulacaoPoderConcorrente(simulacaoPoder, tabuleiro,
+                    robos, Math.round(intervaloMs), this::receberAtualizacaoPoder);
+            simulacaoPoderConcorrente.iniciar();
+            return;
         } else {
             simulacao = new Simulacao(modo, tabuleiro, robos);
             simulacao.setOuvinte(this::aoEvento);
@@ -399,10 +406,6 @@ public class GameScreen implements Tela {
     }
 
     private void executarPasso() {
-        if (simulacaoPoder != null) {
-            executarPassoPoder();
-            return;
-        }
         Simulacao.Passo passo = simulacao.proximoPasso();
         Robo robo = passo.robo();
         if (!robo.isAtivo()) {
@@ -452,22 +455,24 @@ public class GameScreen implements Tela {
         }
     }
 
-    // No turno do fantasma Passo.robo() é null, e ele pode eliminar mais de um pacman de uma vez.
-    private void executarPassoPoder() {
-        int ativosAntes = ativos();
-        Simulacao.Passo passo = simulacaoPoder.proximoPasso();
-        Robo robo = passo.robo();
-        if (ativos() < ativosAntes) {
-            iniciarMorte();
-        } else if (robo != null && tabuleiro.alimentoEncontradoPor(robo)) {
-            sons.tocarFruta();
-        }
-        atualizarPainel();
-        mostrarUltimo();
-
-        if (simulacaoPoder.isTerminada()) {
-            finalizar(simulacaoPoder.getResultado());
-        }
+    private void receberAtualizacaoPoder(SimulacaoPoderConcorrente.Atualizacao atualizacao) {
+        Platform.runLater(() -> {
+            if (saiu || terminada) {
+                return;
+            }
+            synchronized (simulacaoPoder) {
+                if (atualizacao.houveEliminacao()) {
+                    iniciarMorte();
+                } else if (atualizacao.encontrouAlimento()) {
+                    sons.tocarFruta();
+                }
+                atualizarPainel();
+                mostrarUltimo();
+                if (atualizacao.resultado() != null) {
+                    finalizar(atualizacao.resultado());
+                }
+            }
+        });
     }
 
     private int ativos() {
@@ -482,6 +487,9 @@ public class GameScreen implements Tela {
 
     private void mudarVelocidade(int nivel) {
         intervaloMs = INTERVALOS_MS[nivel - 1];
+        if (simulacaoPoderConcorrente != null) {
+            simulacaoPoderConcorrente.mudarIntervalo(Math.round(intervaloMs));
+        }
         if (animacaoSimulacao != null) {
             animacaoSimulacao.setRate(INTERVALO_SIMULACAO.toMillis() / intervaloMs);
         }
@@ -590,6 +598,21 @@ public class GameScreen implements Tela {
         }
     }
 
+    private void receberEvento(EventoPartida evento) {
+        if (Platform.isFxApplicationThread()) {
+            aoEvento(evento);
+            return;
+        }
+        Platform.runLater(() -> {
+            if (saiu || terminada) {
+                return;
+            }
+            synchronized (simulacaoPoder) {
+                aoEvento(evento);
+            }
+        });
+    }
+
     private void mostrarUltimo() {
         DiarioPartida.Entrada ultima = diario.ultima();
         if (ultima != null) {
@@ -649,6 +672,13 @@ public class GameScreen implements Tela {
             return;
         }
         pausado = !pausado;
+        if (simulacaoPoderConcorrente != null) {
+            if (pausado) {
+                simulacaoPoderConcorrente.pausar();
+            } else {
+                simulacaoPoderConcorrente.retomar();
+            }
+        }
         for (Animation animacao : new Animation[]{animacaoBoca, animacaoSimulacao, animacaoStart}) {
             if (animacao == null) {
                 continue;
@@ -798,6 +828,9 @@ public class GameScreen implements Tela {
     }
 
     private void pararAnimacoes() {
+        if (simulacaoPoderConcorrente != null) {
+            simulacaoPoderConcorrente.parar();
+        }
         if (animacaoBoca != null) {
             animacaoBoca.stop();
         }

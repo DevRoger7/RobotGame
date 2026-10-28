@@ -28,20 +28,51 @@ public class SimulacaoPoder {
         this.robos = robos;
     }
 
-    public void setOuvinte(Consumer<EventoPartida> ouvinte) {
+    public synchronized void setOuvinte(Consumer<EventoPartida> ouvinte) {
         this.ouvinte = ouvinte;
     }
 
-    public boolean isTerminada() {
+    public synchronized boolean isTerminada() {
         return resultado != null;
     }
 
-    public String getResultado() {
+    public synchronized String getResultado() {
         return resultado;
     }
 
+    // Cada personagem chama seu próprio passo. O monitor protege decisão, movimento e colisão.
+    public synchronized Simulacao.Passo moverPacman(Robo robo) {
+        if (isTerminada() || !podeJogarPacman(robo)) {
+            return null;
+        }
+        Simulacao.Passo passo = turnoDoPacman(robo);
+        verificarFim();
+        return passo;
+    }
+
+    public synchronized Simulacao.Passo moverFantasma() {
+        if (isTerminada() || tabuleiro.getFantasmaInteligente() == null) {
+            return null;
+        }
+        Simulacao.Passo passo = turnoDoFantasma();
+        verificarFim();
+        return passo;
+    }
+
+    // Relógio da partida: mantém duração da bolinha e limite de tempo sem ordenar movimentos.
+    public synchronized void passarTempo() {
+        if (isTerminada()) {
+            return;
+        }
+        rodadas++;
+        for (EventoPartida evento : gerador.fimDaRodada(tabuleiro, robos)) {
+            ouvinte.accept(evento);
+        }
+        verificarFim();
+    }
+
     // No turno do fantasma, Passo.robo() é null.
-    public Simulacao.Passo proximoPasso() {
+    public synchronized Simulacao.Passo proximoPasso() {
         if (isTerminada()) {
             throw new IllegalStateException("A simulação já terminou.");
         }
@@ -81,7 +112,18 @@ public class SimulacaoPoder {
             return tabuleiro.getFantasmaInteligente() != null;
         }
         // Quem já chegou à fruta para de jogar e espera os outros.
-        return robos[ator].isAtivo() && !tabuleiro.alimentoEncontradoPor(robos[ator]);
+        return podeJogarPacman(robos[ator]);
+    }
+
+    private boolean podeJogarPacman(Robo robo) {
+        boolean pertenceAPartida = false;
+        for (Robo participante : robos) {
+            if (participante == robo) {
+                pertenceAPartida = true;
+                break;
+            }
+        }
+        return pertenceAPartida && robo.isAtivo() && !tabuleiro.alimentoEncontradoPor(robo);
     }
 
     private Simulacao.Passo turnoDoPacman(Robo robo) {

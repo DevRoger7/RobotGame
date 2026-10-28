@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Como os Pacmans andam com threads · RobotGame</title>
+  <style>
+    @font-face { font-family: Chakra; src: url('../src/main/resources/fonts/ChakraPetch-Medium.ttf'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: Chakra; src: url('../src/main/resources/fonts/ChakraPetch-Bold.ttf'); font-weight: 700; font-display: swap; }
+    @font-face { font-family: PressStart; src: url('../src/main/resources/fonts/PressStart2P-Regular.ttf'); font-display: swap; }
+    :root {
+      --bg: #090d1e; --surface: #141b35; --surface-2: #1c2542; --line: #334061;
+      --text: #f3f1d9; --muted: #c4c8db; --yellow: #ffdc55; --pink: #ff83b5;
+      --cyan: #79d9e7; --green: #a4e6a2; --orange: #ffad73;
+      --body: Chakra, 'Trebuchet MS', sans-serif; --display: PressStart, 'Courier New', monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 500 17px/1.6 var(--body); }
+    a { color: var(--cyan); text-underline-offset: .2em; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 4px; }
+    .skip { position: absolute; left: -999px; top: 10px; z-index: 10; padding: 8px; background: var(--yellow); color: var(--bg); }
+    .skip:focus { left: 10px; }
+    .wrap { width: min(1120px, calc(100% - 40px)); margin-inline: auto; }
+    .topbar { border-bottom: 1px solid var(--line); background: #0d1329; }
+    .topbar .wrap { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { color: var(--yellow); font: 12px/1.4 var(--display); letter-spacing: -.04em; text-decoration: none; }
+    .topnav { display: flex; flex-wrap: wrap; gap: 8px 22px; font-size: 14px; }
+    .topnav a { color: var(--muted); text-decoration: none; }
+    .topnav a:hover { color: var(--yellow); }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr); gap: clamp(28px, 6vw, 80px); align-items: center; padding-block: clamp(60px, 9vw, 116px) 70px; }
+    .eyebrow { color: var(--yellow); font: 11px/1.5 var(--display); letter-spacing: .01em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 680px; margin: 18px 0 26px; font: clamp(27px, 4.1vw, 52px)/1.38 var(--display); letter-spacing: -.06em; }
+    h1 em { color: var(--yellow); font-style: normal; }
+    .lead { max-width: 610px; color: var(--text); font-size: clamp(19px, 2.2vw, 24px); line-height: 1.4; }
+    .sublead { max-width: 600px; color: var(--muted); }
+    .hero-note { display: inline-flex; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 14px; }
+    .cabinet { position: relative; min-height: 330px; border: 2px solid var(--line); background: #101731; padding: 26px; box-shadow: 12px 12px 0 #050813; overflow: hidden; }
+    .cabinet::before { content: ''; position: absolute; inset: 0; opacity: .24; background-image: linear-gradient(#405080 1px, transparent 1px), linear-gradient(90deg, #405080 1px, transparent 1px); background-size: 26px 26px; pointer-events: none; }
+    .cabinet-title { position: relative; color: var(--muted); font: 10px/1.5 var(--display); }
+    .maze-lanes { position: relative; display: grid; gap: 14px; margin-top: 26px; }
+    .maze-lane { display: grid; grid-template-columns: 32px 1fr auto; gap: 12px; align-items: center; min-height: 40px; }
+    .maze-track { height: 12px; border-top: 3px solid #5275ce; border-bottom: 3px solid #5275ce; position: relative; }
+    .maze-track::after { content: '•  •  •  •  •  •'; position: absolute; top: -14px; left: 12%; color: var(--yellow); font-size: 20px; letter-spacing: .45em; white-space: nowrap; }
+    .maze-label { color: var(--muted); font: 10px/1.4 var(--display); }
+    .pac { display: block; width: 29px; height: 29px; border-radius: 50%; background: var(--yellow); clip-path: polygon(50% 50%, 100% 15%, 100% 0, 0 0, 0 100%, 100% 100%, 100% 85%); }
+    .pac.pink { background: var(--pink); } .pac.cyan { background: var(--cyan); }
+    .ghost { width: 28px; height: 29px; background: var(--orange); border-radius: 14px 14px 3px 3px; clip-path: polygon(0 50%, 8% 20%, 29% 0, 71% 0, 92% 20%, 100% 50%, 100% 100%, 83% 82%, 66% 100%, 50% 82%, 33% 100%, 16% 82%, 0 100%); position: relative; }
+    .ghost::after { content: '••'; position: absolute; top: 4px; left: 7px; color: #101731; letter-spacing: 3px; font-size: 16px; }
+    .cabinet-footer { position: relative; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--yellow); font: 10px/1.6 var(--display); }
+    main section { scroll-margin-top: 28px; }
+    .section { padding-block: clamp(54px, 7vw, 86px); border-top: 1px solid var(--line); }
+    .section-heading { display: grid; grid-template-columns: 1fr minmax(220px, 340px); gap: 32px; align-items: end; margin-bottom: 32px; }
+    .section-index { color: var(--yellow); font: 11px var(--display); }
+    h2 { margin: 14px 0 0; font: clamp(23px, 3vw, 36px)/1.45 var(--display); letter-spacing: -.04em; }
+    .section-heading p { color: var(--muted); margin: 0; }
+    h3 { margin-bottom: 10px; font-size: 21px; line-height: 1.3; }
+    .callout { padding: 22px 26px; background: #252838; border-left: 4px solid var(--yellow); }
+    .callout strong { color: var(--yellow); }
+    .thread-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .55fr); gap: 20px; }
+    .thread-list { display: grid; gap: 9px; }
+    .thread-row { display: grid; grid-template-columns: 15px minmax(140px, .55fr) minmax(0, 1fr); align-items: center; gap: 14px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); }
+    .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--yellow); }
+    .dot.pink { background: var(--pink); } .dot.cyan { background: var(--cyan); } .dot.orange { background: var(--orange); } .dot.green { background: var(--green); }
+    .thread-row strong { font-weight: 700; }
+    .thread-row span:last-child { color: var(--muted); font-size: 15px; }
+    .thread-aside { padding: 23px 25px; background: var(--surface-2); }
+    .thread-aside p:last-child { margin-bottom: 0; }
+    .formula { margin-top: 20px; padding: 22px 26px; background: var(--yellow); color: #141725; font-weight: 700; font-size: clamp(18px, 2vw, 23px); }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .compare > div { padding: 28px; background: var(--surface); border: 1px solid var(--line); }
+    .compare .now { border-color: var(--yellow); }
+    .compare h3 { color: var(--muted); }
+    .compare .now h3 { color: var(--yellow); }
+    .seq { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 0; font: 13px/1.6 var(--display); }
+    .seq span { padding: 8px; background: var(--surface-2); }
+    .seq b { color: var(--yellow); }
+    .mini-note { color: var(--muted); font-size: 15px; margin: 17px 0 0; }
+    .demo { background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+    .demo-head { padding: 19px 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .demo-head h3 { margin: 0; }
+    .demo-count { font: 11px var(--display); color: var(--yellow); white-space: nowrap; }
+    .demo-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(230px, .8fr); }
+    .demo-guide { margin: 0; padding: 16px 24px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    .demo-guide strong { color: var(--text); }
+    .demo-lanes { padding: 28px; display: grid; gap: 11px; }
+    .demo-lane { display: grid; grid-template-columns: minmax(115px, 150px) 1fr; gap: 14px; align-items: center; }
+    .demo-lane span { font-size: 15px; }
+    .actor-state { min-height: 38px; padding: 9px 12px; display: flex; align-items: center; background: #303a56; border-left: 4px solid #66708d; color: var(--muted); font-weight: 700; transition: background .2s ease, color .2s ease, border-color .2s ease; }
+    .actor-state[data-state="active"] { background: var(--yellow); border-color: #fff1a3; color: #171b2a; }
+    .actor-state[data-state="blocked"] { background: #59342c; border-color: var(--orange); color: #ffe2d6; }
+    .demo-copy { padding: 28px; background: var(--surface-2); }
+    .demo-copy .tag { color: var(--yellow); font: 11px var(--display); }
+    .demo-copy h3 { margin: 13px 0; }
+    .demo-copy p { margin-bottom: 0; }
+    .demo-controls { display: flex; gap: 12px; padding: 17px 24px; border-top: 1px solid var(--line); }
+    button { cursor: pointer; min-height: 44px; padding: 8px 18px; background: var(--yellow); color: #111627; border: 0; font: 700 16px var(--body); }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    button:disabled { opacity: .46; cursor: not-allowed; }
+    .lock-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(250px, .7fr); gap: 28px; }
+    .lock-visual { padding: 28px; background: var(--surface); border: 1px solid var(--line); }
+    .actor-line { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px dashed var(--line); }
+    .actor-line:last-child { border-bottom: 0; }
+    .actor-line span:last-child { margin-left: auto; color: var(--muted); }
+    .lock { margin: 22px 0; padding: 18px; text-align: center; background: var(--yellow); color: var(--bg); font: 12px/1.6 var(--display); }
+    .lock-grid > div:last-child p { color: var(--muted); }
+    .plain-steps { counter-reset: step; display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+    .plain-steps li { counter-increment: step; display: grid; grid-template-columns: 38px 1fr; gap: 15px; align-items: start; }
+    .plain-steps li::before { content: counter(step, decimal-leading-zero); color: var(--yellow); font: 11px/2.5 var(--display); }
+    .clock-panel { display: grid; grid-template-columns: 180px 1fr; gap: 30px; align-items: center; padding: 30px; background: var(--surface-2); }
+    .clock-face { width: 150px; height: 150px; border: 8px dotted var(--green); border-radius: 50%; display: grid; place-items: center; color: var(--green); font: 15px var(--display); }
+    .clock-panel p:last-child { margin-bottom: 0; }
+    .fine { margin-top: 16px; color: var(--muted); font-size: 15px; }
+    .life { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .life > div { padding: 20px 22px; border-top: 3px solid var(--yellow); background: var(--surface); }
+    .life strong { display: block; color: var(--yellow); margin-bottom: 7px; }
+    .life p { color: var(--muted); margin-bottom: 0; }
+    .speech { padding: clamp(24px, 4vw, 44px); background: var(--yellow); color: #101629; font-size: clamp(19px, 2.2vw, 25px); font-weight: 700; line-height: 1.5; }
+    .speech p { margin: 0; }
+    .source-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .source-list a { display: block; padding: 18px; border: 1px solid var(--line); background: var(--surface); text-decoration: none; }
+    .source-list a:hover { border-color: var(--cyan); }
+    .source-list strong { display: block; color: var(--cyan); margin-bottom: 5px; overflow-wrap: anywhere; }
+    .source-list span { display: block; color: var(--muted); font-size: 14px; }
+    footer { padding: 30px 0 45px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+    @media (max-width: 800px) {
+      .hero, .section-heading, .thread-map, .demo-body, .lock-grid { grid-template-columns: 1fr; }
+      .cabinet { min-height: 270px; }
+      .section-heading { gap: 14px; }
+      .compare, .life, .source-list { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 540px) {
+      .wrap { width: min(100% - 28px, 1120px); }
+      .topbar .wrap { padding-block: 17px; align-items: flex-start; flex-direction: column; }
+      .topnav { gap: 8px 14px; }
+      .hero { padding-top: 48px; }
+      h1 { font-size: 26px; }
+      h2 { font-size: 22px; }
+      .cabinet { padding: 18px; }
+      .thread-row { grid-template-columns: 13px 1fr; }
+      .thread-row span:last-child { grid-column: 2; }
+      .demo-lanes, .demo-copy { padding: 21px; }
+      .demo-lane { grid-template-columns: 100px 1fr; }
+      .clock-panel { grid-template-columns: 1fr; }
+      .clock-face { width: 110px; height: 110px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .actor-state { transition: none; } }
+    @media print {
+      :root { --bg: #fff; --surface: #f1f1f1; --surface-2: #e9e9e9; --line: #bbb; --text: #111; --muted: #333; --yellow: #735700; --cyan: #00546b; }
+      body { background: white; } .topbar, .cabinet, .demo-controls { display: none; }
+      .hero { display: block; padding: 20px 0; } .section { padding-block: 24px; }
+      .speech, .formula, .lock { background: #eee; color: #111; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#inicio">ROBOTGAME / GUIA</a>
+      <nav class="topnav" aria-label="Seções do guia">
+        <a href="#personagens">Quem faz o quê</a><a href="#exemplo">Exemplo</a><a href="#sincronizacao">Sincronização</a><a href="#relogio">Relógio</a><a href="#professor">Para explicar</a>
+      </nav>
+    </div>
+  </header>
+  <main id="conteudo">
+    <div class="wrap hero" id="inicio">
+      <div>
+        <div class="eyebrow">Modo Pac-Man com poder · guia de lógica</div>
+        <h1>Cada um anda no <em>próprio ritmo.</em></h1>
+        <p class="lead">Três Pacmans e um fantasma móvel têm suas próprias threads. Cada um tenta se mover quando chega a sua hora.</p>
+        <p class="sublead">Eles compartilham o mesmo tabuleiro. Por isso, cada movimento completo ocupa o tabuleiro por um instante, enquanto os demais esperam.</p>
+        <span class="hero-note">Leitura: cerca de 5 minutos · não precisa saber Java para começar</span>
+      </div>
+      <div class="cabinet" aria-label="Ilustração de quatro personagens em pistas separadas">
+        <div class="cabinet-title">QUATRO CAMINHOS · UM TABULEIRO</div>
+        <div class="maze-lanes">
+          <div class="maze-lane"><i class="pac" aria-hidden="true"></i><div class="maze-track"></div><span class="maze-label">P1</span></div>
+          <div class="maze-lane"><i class="pac pink" aria-hidden="true"></i><div class="maze-track"></div><span class="maze-label">P2</span></div>
+          <div class="maze-lane"><i class="pac cyan" aria-hidden="true"></i><div class="maze-track"></div><span class="maze-label">P3</span></div>
+          <div class="maze-lane"><i class="ghost" aria-hidden="true"></i><div class="maze-track"></div><span class="maze-label">F</span></div>
+        </div>
+        <div class="cabinet-footer">SEM FILA DE VEZES</div>
+      </div>
+    </div>
+
+    <section class="section" id="personagens"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">01 / ELENCO</span><h2>Quem trabalha em paralelo?</h2></div><p>Thread é um caminho de execução. Cada personagem móvel repete seu próprio ciclo.</p></div>
+      <div class="thread-map">
+        <div class="thread-list">
+          <div class="thread-row"><i class="dot" aria-hidden="true"></i><strong>Pacman 1</strong><span>decide, tenta mover e espera</span></div>
+          <div class="thread-row"><i class="dot pink" aria-hidden="true"></i><strong>Pacman 2</strong><span>faz o mesmo, na sua thread</span></div>
+          <div class="thread-row"><i class="dot cyan" aria-hidden="true"></i><strong>Pacman 3</strong><span>faz o mesmo, na sua thread</span></div>
+          <div class="thread-row"><i class="dot orange" aria-hidden="true"></i><strong>Fantasma inteligente</strong><span>escolhe alvo, move e espera</span></div>
+          <div class="thread-row"><i class="dot green" aria-hidden="true"></i><strong>Relógio da partida</strong><span>atualiza bolinha e limite da partida</span></div>
+        </div>
+        <aside class="thread-aside"><h3>Quem não ganha thread?</h3><p>Os fantasmas colocados como obstáculos continuam parados. O único fantasma que anda neste modo é o inteligente.</p><p>O relógio também não move ninguém. Ele cuida de regras que antes aconteciam no fim de cada rodada.</p></aside>
+      </div>
+      <div class="formula">Ciclo de cada personagem: espera → tenta agir → volta a esperar.</div>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">02 / MUDANÇA</span><h2>O que deixou de ser “por vez”?</h2></div><p>A diferença está em quem decide quando cada movimento começa.</p></div>
+      <div class="compare">
+        <div><h3>Antes</h3><p>Um temporizador chamava um passo. A variável <code>vez</code> escolhia o próximo personagem.</p><div class="seq"><span>P1</span><b>›</b><span>P2</span><b>›</b><span>P3</span><b>›</b><span>F</span></div></div>
+        <div class="now"><h3>Agora, neste modo</h3><p>Cada personagem tem seu laço. Quando sua espera termina, ele solicita sua própria ação. Não há ordem fixa de personagens.</p><div class="seq"><span>P1 ↻</span><span>P2 ↻</span><span>P3 ↻</span><span>F ↻</span></div></div>
+      </div>
+      <p class="mini-note">Eles usam a mesma velocidade selecionada na interface, mas cada espera acontece na própria thread. A ordem real de chegada pode variar.</p>
+    </div></section>
+
+    <section class="section" id="exemplo"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">03 / EXEMPLO</span><h2>Pacman e fantasma tentam mover quase juntos</h2></div><p>Este exemplo mostra apenas uma ordem possível. Em outra execução, qualquer personagem pode chegar primeiro.</p></div>
+      <div class="demo" aria-label="Exemplo interativo de concorrência">
+        <div class="demo-head"><h3>O que cada thread está fazendo</h3><span class="demo-count" id="demo-count">1 / 5</span></div>
+        <p class="demo-guide"><strong>Como ler:</strong> cada linha é uma thread. O estado amarelo está mudando o tabuleiro; o laranja acordou, mas espera essa mudança terminar.</p>
+        <div class="demo-body">
+          <div class="demo-lanes" id="demo-lanes">
+            <div class="demo-lane"><span>Pacman 1</span><span class="actor-state" data-state="waiting">Esperando seu intervalo</span></div>
+            <div class="demo-lane"><span>Pacman 2</span><span class="actor-state" data-state="waiting">Esperando seu intervalo</span></div>
+            <div class="demo-lane"><span>Pacman 3</span><span class="actor-state" data-state="waiting">Esperando seu intervalo</span></div>
+            <div class="demo-lane"><span>Fantasma</span><span class="actor-state" data-state="waiting">Esperando seu intervalo</span></div>
+          </div>
+          <div class="demo-copy" aria-live="polite"><span class="tag" id="demo-tag">1 · ESPERA</span><h3 id="demo-title">Cada um controla a própria espera</h3><p id="demo-text">Todos estão dormindo pelo intervalo de velocidade. Não existe uma variável dizendo de quem é a vez.</p></div>
+        </div>
+        <div class="demo-controls"><button class="secondary" id="prev" type="button" disabled>Voltar</button><button id="next" type="button">Próxima cena</button></div>
+      </div>
+    </div></section>
+
+    <section class="section" id="sincronizacao"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">04 / TABULEIRO</span><h2>Por que existe uma “trava”?</h2></div><p>Dois personagens podem tentar agir no mesmo instante. O estado do tabuleiro precisa continuar coerente.</p></div>
+      <div class="lock-grid">
+        <div class="lock-visual">
+          <div class="actor-line"><i class="dot" aria-hidden="true"></i><strong>Pacman tenta mover</strong><span>entra</span></div>
+          <div class="lock">DECIDIR + MOVER + RESOLVER COLISÃO</div>
+          <div class="actor-line"><i class="dot orange" aria-hidden="true"></i><strong>Fantasma também tenta</strong><span>espera esse instante</span></div>
+        </div>
+        <div><h3>Uma porta estreita</h3><p>Imagine duas pessoas andando livremente. Para atravessar uma porta estreita, uma passa primeiro. Depois, ambas continuam por conta própria.</p><p>No código, a porta é o <code>synchronized</code>. Ele protege decisão, posição, colisão e verificação do fim da partida. A espera de velocidade ocorre fora da trava.</p></div>
+      </div>
+      <div class="callout" style="margin-top:26px"><strong>Independência não significa escrever no tabuleiro ao mesmo tempo.</strong> Significa que ninguém espera uma rodada inteira nem recebe uma vez fixa. Se duas threads chegarem juntas, uma aguarda só a atualização curta da outra.</div>
+      <h3 style="margin-top:34px">O que acontece em uma tentativa</h3>
+      <ol class="plain-steps">
+        <li><span>A thread termina sua espera e verifica se a partida ainda está ativa e sem pausa.</span></li>
+        <li><span>Ela entra na parte sincronizada. Se outra thread está atualizando o tabuleiro, aguarda esse instante.</span></li>
+        <li><span>O personagem escolhe a direção e tenta mover. O jogo resolve obstáculos, poder e colisões.</span></li>
+        <li><span>O jogo verifica se alguém venceu ou se todos foram eliminados e envia o evento para a interface.</span></li>
+        <li><span>A thread libera o estado compartilhado e volta a esperar antes da próxima tentativa.</span></li>
+      </ol>
+      <p class="fine">Exemplo: se Pacman e fantasma tentam entrar na mesma casa, a primeira atualização termina por inteiro. A segunda lê as posições já atualizadas e resolve a colisão corretamente.</p>
+    </div></section>
+
+    <section class="section" id="relogio"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">05 / REGRAS</span><h2>Para que serve o relógio?</h2></div><p>Antes, certas regras rodavam após todos jogarem. Sem turnos, esse “fim da rodada” não existe mais.</p></div>
+      <div class="clock-panel"><div class="clock-face" aria-hidden="true">TEMPO</div><div><h3>Ele só cuida do tempo da partida</h3><p>Periodicamente, o relógio diminui a duração da bolinha disponível no tabuleiro, tenta criar outra quando necessário e conta o limite da partida.</p><p>Ele não escolhe quem anda. O poder que um Pacman já pegou diminui quando esse Pacman faz seu próprio movimento.</p></div></div>
+      <p class="fine">Neste código, o relógio espera quatro vezes o intervalo básico. Esse fator aproxima a duração da antiga rodada de quatro personagens; não cria uma fila de movimentos.</p>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">06 / CONTROLE</span><h2>Como a partida pausa e termina?</h2></div><p>As threads também precisam respeitar os comandos da partida.</p></div>
+      <div class="life">
+        <div><strong>PAUSAR</strong><p>O controlador marca a partida como pausada. Cada thread espera, sem mover personagem.</p></div>
+        <div><strong>RETOMAR</strong><p>As threads são avisadas e voltam aos próprios ciclos.</p></div>
+        <div><strong>TERMINAR OU SAIR</strong><p>O controlador desliga os ciclos e interrompe as esperas.</p></div>
+      </div>
+      <p class="fine">A interface JavaFX recebe os eventos pela sua própria thread, usando <code>Platform.runLater</code>. Assim, a lógica do movimento fica nas threads dos personagens e o desenho da tela fica na thread da interface.</p>
+    </div></section>
+
+    <section class="section" id="professor"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">07 / RESUMO</span><h2>Como explicar ao professor</h2></div><p>Uma fala curta que descreve a implementação atual.</p></div>
+      <div class="speech"><p>“No modo com poder, cada Pacman e o fantasma inteligente têm uma thread própria. Cada thread espera, solicita um movimento e repete. Não existe mais uma variável passando a vez. Como todos usam o mesmo tabuleiro, sincronizei a decisão, o movimento e a colisão para que uma atualização termine antes da próxima começar. O relógio é separado e cuida só da bolinha e do limite da partida.”</p></div>
+      <p class="fine">Se perguntarem “eles dependem um do outro?”, responda: “Somente no instante em que precisam alterar o estado compartilhado. O ritmo de cada thread não depende da vez dos outros.”</p>
+    </div></section>
+
+    <section class="section"><div class="wrap">
+      <div class="section-heading"><div><span class="section-index">08 / CÓDIGO</span><h2>Onde encontrar cada parte</h2></div><p>Abra os arquivos após entender o desenho geral. Os nomes abaixo levam ao código do projeto.</p></div>
+      <div class="source-list">
+        <a href="../src/main/java/robotgame/modelo/SimulacaoPoderConcorrente.java"><strong>SimulacaoPoderConcorrente.java</strong><span>Criação das threads, espera, pausa e parada.</span></a>
+        <a href="../src/main/java/robotgame/modelo/SimulacaoPoder.java"><strong>SimulacaoPoder.java</strong><span>Movimento, colisão, relógio e fim da partida.</span></a>
+        <a href="../src/main/java/robotgame/ui/screens/GameScreen.java"><strong>GameScreen.java</strong><span>Inicia o controlador e recebe eventos na interface.</span></a>
+      </div>
+      <p class="fine">O método antigo <code>proximoPasso()</code> ainda existe em <code>SimulacaoPoder</code>, mas a tela do modo com poder agora usa as ações independentes.</p>
+    </div></section>
+  </main>
+  <footer><div class="wrap">RobotGame · Guia de estudo da lógica implementada no modo Pac-Man com poder.</div></footer>
+  <script>
+    const scenes = [
+      { tag: '1 · ESPERA', title: 'Cada um controla a própria espera', text: 'Todos estão dormindo pelo intervalo de velocidade. Não existe uma variável dizendo de quem é a vez.', states: ['waiting', 'waiting', 'waiting', 'waiting'] },
+      { tag: '2 · PACMAN ACORDA', title: 'Pacman 1 termina sua espera primeiro', text: 'Ele entra na parte sincronizada, escolhe uma direção permitida, move e resolve colisões. Os outros continuam em suas próprias esperas.', states: ['active', 'waiting', 'waiting', 'waiting'] },
+      { tag: '3 · FANTASMA ACORDA', title: 'O fantasma tenta agir enquanto Pacman 1 move', text: 'O fantasma já terminou sua espera, mas o tabuleiro está sendo atualizado. Por isso, ele aguarda somente Pacman 1 liberar a parte sincronizada.', states: ['active', 'waiting', 'waiting', 'blocked'] },
+      { tag: '4 · TROCA NA TRAVA', title: 'Pacman 1 termina; o fantasma entra', text: 'Pacman 1 volta a esperar. O fantasma agora escolhe uma direção permitida, move e resolve a colisão usando as posições já atualizadas.', states: ['waiting', 'waiting', 'waiting', 'active'] },
+      { tag: '5 · CICLOS CONTINUAM', title: 'O fantasma também volta a esperar', text: 'Ninguém passou a vez para o fantasma. Ele entrou porque sua thread estava pronta e a parte sincronizada ficou livre. Na próxima tentativa, qualquer thread pode chegar primeiro.', states: ['waiting', 'waiting', 'waiting', 'waiting'] }
+    ];
+    let scene = 0;
+    const actorStates = [...document.querySelectorAll('.actor-state')];
+    const prev = document.getElementById('prev');
+    const next = document.getElementById('next');
+    function showScene() {
+      const current = scenes[scene];
+      document.getElementById('demo-count').textContent = `${scene + 1} / ${scenes.length}`;
+      document.getElementById('demo-tag').textContent = current.tag;
+      document.getElementById('demo-title').textContent = current.title;
+      document.getElementById('demo-text').textContent = current.text;
+      const labels = { waiting: 'Esperando seu intervalo', active: 'Atualizando o tabuleiro', blocked: 'Aguardando a trava' };
+      actorStates.forEach((state, index) => {
+        state.dataset.state = current.states[index];
+        state.textContent = labels[current.states[index]];
+      });
+      prev.disabled = scene === 0;
+      next.disabled = scene === scenes.length - 1;
+    }
+    prev.addEventListener('click', () => { scene--; showScene(); });
+    next.addEventListener('click', () => { scene++; showScene(); });
+  </script>
+</body>
+</html>
